@@ -166,7 +166,13 @@ async def assign_least_loaded_mentor(
 async def generate_case_ref(db: AsyncSession) -> str:
     count_res = await db.execute(select(func.count(Case.id)))
     cnt = (count_res.scalar() or 0) + 1
-    return f"GK-2026-{cnt:06d}"
+    candidate = f"GK-2026-{cnt:06d}"
+    check = await db.execute(select(Case.id).where(Case.ref == candidate))
+    while check.scalar_one_or_none() is not None:
+        cnt += 1
+        candidate = f"GK-2026-{cnt:06d}"
+        check = await db.execute(select(Case.id).where(Case.ref == candidate))
+    return candidate
 
 
 async def evaluate_student(

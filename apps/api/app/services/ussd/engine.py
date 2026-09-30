@@ -1087,10 +1087,12 @@ async def execute_mark_absences_flow(
                     )
 
             # Evaluate dropout risk rules for absent student
-            await evaluate_student(student.id, db)
+            try:
+                await evaluate_student(student.id, db)
+            except Exception as e:  # noqa: BLE001
+                logger.error("Error evaluating student %s in USSD flow: %s", student.id, e)
 
     await db.commit()
-
 
     body = get_msg(
         "T_COMMIT_SUCCESS",
@@ -1123,8 +1125,9 @@ async def save_request_cache(
         latency_ms=latency_ms,
         created_at=utc_now(),
     )
-    db.add(req)
     try:
+        async with db.begin_nested():
+            db.add(req)
         await db.commit()
-    except Exception:  # noqa: BLE001
-        await db.rollback()
+    except Exception as e:  # noqa: BLE001
+        logger.warning("Failed to save USSD request cache: %s", e)

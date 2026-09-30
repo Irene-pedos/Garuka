@@ -216,3 +216,53 @@ async def test_nightly_rules_auto_resolve(db_session: AsyncSession):
     await db_session.refresh(case)
     assert case.status == CaseStatusEnum.resolved_returned
     assert case.resolved_at is not None
+
+
+@pytest.mark.asyncio
+async def test_generate_case_ref_collision_free(db_session: AsyncSession):
+    from app.services.rules_engine import generate_case_ref
+
+    ref1 = await generate_case_ref(db_session)
+    # Manually create a case with this ref to simulate collision
+    sector_res = await db_session.execute(select(Sector).limit(1))
+    sector = sector_res.scalar_one()
+
+    school = School(
+        sector_id=sector.id,
+        name=f"Coll School {uuid.uuid4().hex[:6]}",
+        code=f"CS_{uuid.uuid4().hex[:6]}",
+        is_active=True,
+    )
+    db_session.add(school)
+    await db_session.flush()
+
+    cls = Class(school_id=school.id, name="P1 Test", grade=1, academic_year=2026)
+    db_session.add(cls)
+    await db_session.flush()
+
+    st = Student(
+        school_id=school.id,
+        class_id=cls.id,
+        roll_number=1,
+        full_name="Collision Student",
+        status=StudentStatusEnum.active,
+    )
+    db_session.add(st)
+    await db_session.flush()
+
+    dummy_case = Case(
+        ref=ref1,
+        student_id=st.id,
+        school_id=school.id,
+        status=CaseStatusEnum.open,
+        level=2,
+        trigger=CaseTriggerEnum.consecutive,
+        risk_score=50,
+    )
+    db_session.add(dummy_case)
+    await db_session.commit()
+
+    # Next generated ref must NOT collide with ref1
+    ref2 = await generate_case_ref(db_session)
+    assert ref2 != ref1
+    assert ref2.startswith("GK-2026-")
