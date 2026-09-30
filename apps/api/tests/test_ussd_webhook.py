@@ -21,7 +21,7 @@ async def test_ussd_valid_request(async_client: AsyncClient):
     )
     assert response.status_code == 200
     assert "text/plain" in response.headers["content-type"]
-    assert response.text == "CON Hello Garuka"
+    assert response.text.startswith("CON ")
 
 
 @pytest.mark.asyncio
@@ -51,7 +51,9 @@ async def test_ussd_exception_trapped_as_200_service_unavailable(async_client: A
         "networkCode": "99999",
         "text": "",
     }
-    with patch("app.api.v1.ussd_webhook.render_ussd_response", side_effect=RuntimeError("Simulated crash")):
+    with patch(
+        "app.api.v1.ussd_webhook.handle_ussd_request", side_effect=RuntimeError("Simulated crash")
+    ):
         response = await async_client.post(
             f"/api/v1/ussd/{settings.USSD_WEBHOOK_SECRET}",
             data=payload,

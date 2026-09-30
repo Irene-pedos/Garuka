@@ -35,11 +35,15 @@ class User(Base, UUIDMixin, TimestampMixin):
     )
     full_name: Mapped[str] = mapped_column(String(150), nullable=False)
     email: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True, index=True)
-    phone_e164: Mapped[str | None] = mapped_column(String(20), unique=True, nullable=True, index=True)
+    phone_e164: Mapped[str | None] = mapped_column(
+        String(20), unique=True, nullable=True, index=True
+    )
     password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
     pin_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
     pin_failed_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    pin_locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    pin_locked_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     language: Mapped[LanguageEnum] = mapped_column(
         SQLEnum(LanguageEnum, name="user_language_enum"),
         default=LanguageEnum.rw,

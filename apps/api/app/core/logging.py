@@ -25,11 +25,14 @@ class SanitizeLogFilter(logging.Filter):
     """
     Log filter ensuring no raw USSD 'text' with PINs or plain PIN digits are logged.
     """
-    PIN_PATTERN = re.compile(r'\b\d{4}\b')
+
+    PIN_PATTERN = re.compile(r"\b\d{4}\b")
 
     def filter(self, record: logging.LogRecord) -> bool:
-        if isinstance(record.msg, str) and ("pin=" in record.msg.lower() or "pin:" in record.msg.lower()):
-            record.msg = re.sub(r'(pin[=:]\s*)\d+', r'\1****', record.msg, flags=re.IGNORECASE)
+        if isinstance(record.msg, str) and (
+            "pin=" in record.msg.lower() or "pin:" in record.msg.lower()
+        ):
+            record.msg = re.sub(r"(pin[=:]\s*)\d+", r"\1****", record.msg, flags=re.IGNORECASE)
         return True
 
 

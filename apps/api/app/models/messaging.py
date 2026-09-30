@@ -35,7 +35,9 @@ class SmsOutbox(Base, UUIDMixin, TimestampMixin):
     template_key: Mapped[str] = mapped_column(String(50), nullable=False)
     params: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
-    dedupe_key: Mapped[str | None] = mapped_column(String(100), unique=True, nullable=True, index=True)
+    dedupe_key: Mapped[str | None] = mapped_column(
+        String(100), unique=True, nullable=True, index=True
+    )
     status: Mapped[SmsStatusEnum] = mapped_column(
         SQLEnum(SmsStatusEnum, name="sms_status_enum"),
         default=SmsStatusEnum.pending,
@@ -45,7 +47,9 @@ class SmsOutbox(Base, UUIDMixin, TimestampMixin):
     provider_message_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
     attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
-    scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
+    scheduled_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, nullable=False, index=True
+    )
     sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     related_student_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
@@ -70,8 +74,12 @@ class UssdSession(Base):
         nullable=True,
     )
     authed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
-    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, nullable=False
+    )
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False
+    )
 
 
 class UssdRequest(Base):
@@ -83,7 +91,9 @@ class UssdRequest(Base):
     response_kind: Mapped[str] = mapped_column(String(10), nullable=False)
     response_body: Mapped[str] = mapped_column(Text, nullable=False)
     latency_ms: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, nullable=False, index=True
+    )
 
 
 class AppSetting(Base):
@@ -96,7 +106,9 @@ class AppSetting(Base):
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
     )
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False
+    )
 
 
 class AuditLog(Base, UUIDMixin):
@@ -113,4 +125,6 @@ class AuditLog(Base, UUIDMixin):
     entity_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
     ip: Mapped[str | None] = mapped_column(String(50), nullable=True)
     meta: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, nullable=False, index=True
+    )

@@ -71,14 +71,94 @@ async def seed():
         default_pin = get_pin_hash("4821")
 
         users_data = [
-            ("Admin User", "admin@garuka.rw", None, RoleEnum.admin, default_pwd, None, None, None, None),
-            ("District Director", "director@huye.gov.rw", None, RoleEnum.district_director, default_pwd, None, None, None, district.id),
-            ("Sector Officer", "seo@tumba.gov.rw", None, RoleEnum.sector_officer, default_pwd, None, None, sector.id, None),
-            ("Head Teacher", "head@gsdemo1.rw", "+250780000000", RoleEnum.head_teacher, default_pwd, default_pin, school1.id, None, None),
-            ("Teacher Uwimana", "teacher1@gsdemo1.rw", "+250780000001", RoleEnum.teacher, default_pwd, default_pin, school1.id, None, None),
-            ("Teacher Mugisha", "teacher2@gsdemo1.rw", "+250780000002", RoleEnum.teacher, default_pwd, default_pin, school1.id, None, None),
-            ("Mentor Keza", None, "+250780000011", RoleEnum.mentor, None, default_pin, None, sector.id, None),
-            ("Mentor Gasana", None, "+250780000012", RoleEnum.mentor, None, default_pin, None, sector.id, None),
+            (
+                "Admin User",
+                "admin@garuka.rw",
+                None,
+                RoleEnum.admin,
+                default_pwd,
+                None,
+                None,
+                None,
+                None,
+            ),
+            (
+                "District Director",
+                "director@huye.gov.rw",
+                None,
+                RoleEnum.district_director,
+                default_pwd,
+                None,
+                None,
+                None,
+                district.id,
+            ),
+            (
+                "Sector Officer",
+                "seo@tumba.gov.rw",
+                None,
+                RoleEnum.sector_officer,
+                default_pwd,
+                None,
+                None,
+                sector.id,
+                None,
+            ),
+            (
+                "Head Teacher",
+                "head@gsdemo1.rw",
+                "+250780000000",
+                RoleEnum.head_teacher,
+                default_pwd,
+                default_pin,
+                school1.id,
+                None,
+                None,
+            ),
+            (
+                "Teacher Uwimana",
+                "teacher1@gsdemo1.rw",
+                "+250780000001",
+                RoleEnum.teacher,
+                default_pwd,
+                default_pin,
+                school1.id,
+                None,
+                None,
+            ),
+            (
+                "Teacher Mugisha",
+                "teacher2@gsdemo1.rw",
+                "+250780000002",
+                RoleEnum.teacher,
+                default_pwd,
+                default_pin,
+                school1.id,
+                None,
+                None,
+            ),
+            (
+                "Mentor Keza",
+                None,
+                "+250780000011",
+                RoleEnum.mentor,
+                None,
+                default_pin,
+                None,
+                sector.id,
+                None,
+            ),
+            (
+                "Mentor Gasana",
+                None,
+                "+250780000012",
+                RoleEnum.mentor,
+                None,
+                default_pin,
+                None,
+                sector.id,
+                None,
+            ),
         ]
 
         seeded_users = {}
@@ -138,7 +218,9 @@ async def seed():
                 await db.flush()
                 # Link class_teachers
                 if teacher:
-                    await db.execute(class_teachers.insert().values(class_id=c.id, user_id=teacher.id))
+                    await db.execute(
+                        class_teachers.insert().values(class_id=c.id, user_id=teacher.id)
+                    )
                 print(f"  Created Class: {cname}")
             classes[cname] = c
 
@@ -147,7 +229,7 @@ async def seed():
         # 6. Students & Guardians (30 students)
         guardians = []
         for i in range(1, 21):
-            g_phone = f"+25078000{100+i:04d}"
+            g_phone = f"+25078000{100 + i:04d}"
             g_res = await db.execute(select(Guardian).where(Guardian.phone_e164 == g_phone))
             g = g_res.scalar_one_or_none()
             if not g:
@@ -162,8 +244,30 @@ async def seed():
                 await db.flush()
             guardians.append(g)
 
-        first_names = ["Uwase", "Kamana", "Mugabo", "Keza", "Habimana", "Tuyishime", "Kagabo", "Ineza", "Hirwa", "Manzi"]
-        last_names = ["Jeanne", "Eric", "Fabrice", "Aline", "Patrick", "Grace", "David", "Chantal", "Jean", "Marie"]
+        first_names = [
+            "Uwase",
+            "Kamana",
+            "Mugabo",
+            "Keza",
+            "Habimana",
+            "Tuyishime",
+            "Kagabo",
+            "Ineza",
+            "Hirwa",
+            "Manzi",
+        ]
+        last_names = [
+            "Jeanne",
+            "Eric",
+            "Fabrice",
+            "Aline",
+            "Patrick",
+            "Grace",
+            "David",
+            "Chantal",
+            "Jean",
+            "Marie",
+        ]
 
         for roll in range(1, 31):
             s_res = await db.execute(
@@ -203,9 +307,24 @@ async def seed():
         # 7. Terms & Holidays
         t_res = await db.execute(select(Term).where(Term.academic_year == 2026, Term.term_no == 1))
         if not t_res.scalar_one_or_none():
-            t1 = Term(academic_year=2026, term_no=1, start_date=date(2026, 1, 5), end_date=date(2026, 4, 3))
-            t2 = Term(academic_year=2026, term_no=2, start_date=date(2026, 4, 20), end_date=date(2026, 7, 10))
-            t3 = Term(academic_year=2026, term_no=3, start_date=date(2026, 8, 3), end_date=date(2026, 11, 6))
+            t1 = Term(
+                academic_year=2026,
+                term_no=1,
+                start_date=date(2026, 1, 5),
+                end_date=date(2026, 4, 3),
+            )
+            t2 = Term(
+                academic_year=2026,
+                term_no=2,
+                start_date=date(2026, 4, 20),
+                end_date=date(2026, 7, 10),
+            )
+            t3 = Term(
+                academic_year=2026,
+                term_no=3,
+                start_date=date(2026, 8, 3),
+                end_date=date(2026, 11, 6),
+            )
             db.add_all([t1, t2, t3])
             print("  Created 2026 Terms (T1, T2, T3)")
 

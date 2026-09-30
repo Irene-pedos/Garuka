@@ -86,26 +86,41 @@ async def list_students(
     return [student_to_response(s) for s in students]
 
 
-@router.post("", response_model=StudentResponse, status_code=status.HTTP_201_CREATED, operation_id="create_student")
+@router.post(
+    "",
+    response_model=StudentResponse,
+    status_code=status.HTTP_201_CREATED,
+    operation_id="create_student",
+)
 async def create_student(
     req: StudentCreate,
     current_user: User = Depends(require_roles(RoleEnum.admin, RoleEnum.head_teacher)),
     db: AsyncSession = Depends(get_db),
 ):
     if current_user.role == RoleEnum.head_teacher and current_user.school_id != req.school_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot create students outside your school")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot create students outside your school",
+        )
 
     # Verify class exists
     target_class = await db.get(Class, req.class_id)
     if not target_class or target_class.school_id != req.school_id:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Class not found in this school")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Class not found in this school"
+        )
 
     # Check roll number uniqueness in class
     dup = await db.execute(
-        select(Student).where(Student.class_id == req.class_id, Student.roll_number == req.roll_number)
+        select(Student).where(
+            Student.class_id == req.class_id, Student.roll_number == req.roll_number
+        )
     )
     if dup.scalar_one_or_none():
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Roll number {req.roll_number} already in use in this class")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Roll number {req.roll_number} already in use in this class",
+        )
 
     student = Student(
         school_id=req.school_id,
@@ -131,7 +146,9 @@ async def create_student(
     return student_to_response(res.scalar_one())
 
 
-@router.post("/{id}/guardians", response_model=GuardianResponse, operation_id="add_student_guardian")
+@router.post(
+    "/{id}/guardians", response_model=GuardianResponse, operation_id="add_student_guardian"
+)
 async def add_student_guardian(
     id: uuid.UUID,
     req: GuardianCreate,
@@ -143,7 +160,10 @@ async def add_student_guardian(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
 
     if current_user.role == RoleEnum.head_teacher and current_user.school_id != student.school_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot modify student outside your school")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot modify student outside your school",
+        )
 
     guard_res = await db.execute(select(Guardian).where(Guardian.phone_e164 == req.phone_e164))
     guardian = guard_res.scalar_one_or_none()
@@ -191,7 +211,9 @@ async def import_students(
     current_user: User = Depends(require_roles(RoleEnum.admin, RoleEnum.head_teacher)),
     db: AsyncSession = Depends(get_db),
 ):
-    target_school_id = current_user.school_id if current_user.role == RoleEnum.head_teacher else school_id
+    target_school_id = (
+        current_user.school_id if current_user.role == RoleEnum.head_teacher else school_id
+    )
     if not target_school_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="school_id is required")
 

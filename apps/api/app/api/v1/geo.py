@@ -23,6 +23,7 @@ router = APIRouter(tags=["geography"])
 
 # --- Districts ---
 
+
 @router.get("/districts", response_model=list[DistrictResponse], operation_id="list_districts")
 async def list_districts(
     current_user: User = Depends(get_current_user),
@@ -58,6 +59,7 @@ async def create_district(
 
 
 # --- Sectors ---
+
 
 @router.get("/sectors", response_model=list[SectorResponse], operation_id="list_sectors")
 async def list_sectors(
@@ -97,6 +99,7 @@ async def create_sector(
 
 # --- Schools ---
 
+
 @router.get("/schools", response_model=list[SchoolResponse], operation_id="list_schools")
 async def list_schools(
     sector_id: uuid.UUID | None = Query(None),
@@ -112,7 +115,9 @@ async def list_schools(
     elif current_user.role == RoleEnum.sector_officer and current_user.sector_id:
         query = query.where(School.sector_id == current_user.sector_id)
     elif current_user.role == RoleEnum.district_director and current_user.district_id:
-        sectors_in_district = select(Sector.id).where(Sector.district_id == current_user.district_id)
+        sectors_in_district = select(Sector.id).where(
+            Sector.district_id == current_user.district_id
+        )
         query = query.where(School.sector_id.in_(sectors_in_district))
     elif sector_id:
         query = query.where(School.sector_id == sector_id)

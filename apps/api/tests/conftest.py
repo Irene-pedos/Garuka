@@ -35,7 +35,25 @@ async def setup_test_db():
 
 
 @pytest.fixture
+async def db_session():
+    test_engine = create_async_engine(
+        settings.DATABASE_URL,
+        poolclass=NullPool,
+    )
+    test_session_factory = async_sessionmaker(
+        bind=test_engine,
+        autocommit=False,
+        autoflush=False,
+        expire_on_commit=False,
+    )
+    async with test_session_factory() as session:
+        yield session
+    await test_engine.dispose()
+
+
+@pytest.fixture
 async def async_client():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
+

@@ -110,13 +110,21 @@ class Case(Base, UUIDMixin, TimestampMixin):
         nullable=True,
         index=True,
     )
-    opened_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    opened_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, nullable=False
+    )
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    last_evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    last_evaluated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, nullable=False
+    )
     reopened_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
-    events: Mapped[list["CaseEvent"]] = relationship("CaseEvent", back_populates="case", cascade="all, delete-orphan")
-    visits: Mapped[list["MentorVisit"]] = relationship("MentorVisit", back_populates="case", cascade="all, delete-orphan")
+    events: Mapped[list["CaseEvent"]] = relationship(
+        "CaseEvent", back_populates="case", cascade="all, delete-orphan"
+    )
+    visits: Mapped[list["MentorVisit"]] = relationship(
+        "MentorVisit", back_populates="case", cascade="all, delete-orphan"
+    )
 
 
 class CaseEvent(Base, UUIDMixin):
@@ -135,7 +143,9 @@ class CaseEvent(Base, UUIDMixin):
         nullable=True,
     )
     payload: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, nullable=False
+    )
 
     case: Mapped["Case"] = relationship("Case", back_populates="events")
 
@@ -155,7 +165,9 @@ class MentorVisit(Base, UUIDMixin, TimestampMixin):
         nullable=False,
         index=True,
     )
-    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, nullable=False
+    )
     verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     verified_method: Mapped[VerifiedMethodEnum] = mapped_column(
         SQLEnum(VerifiedMethodEnum, name="verified_method_enum"),
@@ -191,7 +203,9 @@ class VisitCode(Base, UUIDMixin, TimestampMixin):
         index=True,
     )
     code_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    expires_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
     attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 

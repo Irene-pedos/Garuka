@@ -8,9 +8,7 @@ from app.models.base import Base, TimestampMixin, UUIDMixin
 
 class Term(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "terms"
-    __table_args__ = (
-        UniqueConstraint("academic_year", "term_no", name="uq_term_year_no"),
-    )
+    __table_args__ = (UniqueConstraint("academic_year", "term_no", name="uq_term_year_no"),)
 
     academic_year: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     term_no: Mapped[int] = mapped_column(Integer, nullable=False)

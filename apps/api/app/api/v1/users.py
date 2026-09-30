@@ -34,7 +34,9 @@ async def list_users(
     role: RoleEnum | None = Query(None),
     school_id: uuid.UUID | None = Query(None),
     sector_id: uuid.UUID | None = Query(None),
-    current_user: User = Depends(require_roles(RoleEnum.admin, RoleEnum.sector_officer, RoleEnum.head_teacher)),
+    current_user: User = Depends(
+        require_roles(RoleEnum.admin, RoleEnum.sector_officer, RoleEnum.head_teacher)
+    ),
     db: AsyncSession = Depends(get_db),
 ):
     query = select(User).order_by(User.full_name)
@@ -57,32 +59,46 @@ async def list_users(
     return [user_to_response(u) for u in result.scalars().all()]
 
 
-@router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED, operation_id="create_user")
+@router.post(
+    "", response_model=UserResponse, status_code=status.HTTP_201_CREATED, operation_id="create_user"
+)
 async def create_user(
     req: UserCreate,
-    current_user: User = Depends(require_roles(RoleEnum.admin, RoleEnum.sector_officer, RoleEnum.head_teacher)),
+    current_user: User = Depends(
+        require_roles(RoleEnum.admin, RoleEnum.sector_officer, RoleEnum.head_teacher)
+    ),
     db: AsyncSession = Depends(get_db),
 ):
     # Enforce role scoping for creation
     if current_user.role == RoleEnum.sector_officer:
         if req.role != RoleEnum.mentor:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Sector officers can only create mentors")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Sector officers can only create mentors",
+            )
         req.sector_id = current_user.sector_id
     elif current_user.role == RoleEnum.head_teacher:
         if req.role != RoleEnum.teacher:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Head teachers can only create teachers")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Head teachers can only create teachers",
+            )
         req.school_id = current_user.school_id
 
     # Check email / phone uniqueness if provided
     if req.email:
         existing = await db.execute(select(User).where(User.email == req.email))
         if existing.scalar_one_or_none():
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered"
+            )
 
     if req.phone_e164:
         existing = await db.execute(select(User).where(User.phone_e164 == req.phone_e164))
         if existing.scalar_one_or_none():
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Phone number already registered")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Phone number already registered"
+            )
 
     user = User(
         full_name=req.full_name.strip(),
@@ -106,7 +122,9 @@ async def create_user(
 @router.post("/{id}/reset-pin", response_model=ResetPinResponse, operation_id="reset_user_pin")
 async def reset_user_pin(
     id: uuid.UUID,
-    current_user: User = Depends(require_roles(RoleEnum.admin, RoleEnum.sector_officer, RoleEnum.head_teacher)),
+    current_user: User = Depends(
+        require_roles(RoleEnum.admin, RoleEnum.sector_officer, RoleEnum.head_teacher)
+    ),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(User).where(User.id == id))
@@ -115,24 +133,38 @@ async def reset_user_pin(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     # Scope validation
-    if current_user.role == RoleEnum.sector_officer and (user.role != RoleEnum.mentor or user.sector_id != current_user.sector_id):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot reset PIN for user outside your sector")
-    if current_user.role == RoleEnum.head_teacher and (user.role != RoleEnum.teacher or user.school_id != current_user.school_id):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot reset PIN for user outside your school")
+    if current_user.role == RoleEnum.sector_officer and (
+        user.role != RoleEnum.mentor or user.sector_id != current_user.sector_id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot reset PIN for user outside your sector",
+        )
+    if current_user.role == RoleEnum.head_teacher and (
+        user.role != RoleEnum.teacher or user.school_id != current_user.school_id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot reset PIN for user outside your school",
+        )
 
     user.pin_hash = None
     user.pin_failed_count = 0
     user.pin_locked_until = None
     await db.commit()
 
-    return ResetPinResponse(id=user.id, message="PIN reset successfully. User will create a new PIN on next USSD dial.")
+    return ResetPinResponse(
+        id=user.id, message="PIN reset successfully. User will create a new PIN on next USSD dial."
+    )
 
 
 @router.patch("/{id}", response_model=UserResponse, operation_id="update_user")
 async def update_user(
     id: uuid.UUID,
     req: UserUpdate,
-    current_user: User = Depends(require_roles(RoleEnum.admin, RoleEnum.sector_officer, RoleEnum.head_teacher)),
+    current_user: User = Depends(
+        require_roles(RoleEnum.admin, RoleEnum.sector_officer, RoleEnum.head_teacher)
+    ),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(select(User).where(User.id == id))
@@ -141,10 +173,18 @@ async def update_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     # Scope validation
-    if current_user.role == RoleEnum.sector_officer and (user.role != RoleEnum.mentor or user.sector_id != current_user.sector_id):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot modify user outside your sector")
-    if current_user.role == RoleEnum.head_teacher and (user.role != RoleEnum.teacher or user.school_id != current_user.school_id):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot modify user outside your school")
+    if current_user.role == RoleEnum.sector_officer and (
+        user.role != RoleEnum.mentor or user.sector_id != current_user.sector_id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Cannot modify user outside your sector"
+        )
+    if current_user.role == RoleEnum.head_teacher and (
+        user.role != RoleEnum.teacher or user.school_id != current_user.school_id
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Cannot modify user outside your school"
+        )
 
     if req.full_name is not None:
         user.full_name = req.full_name.strip()

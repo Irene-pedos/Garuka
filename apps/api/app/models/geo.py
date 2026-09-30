@@ -24,14 +24,14 @@ class District(Base, UUIDMixin, TimestampMixin):
 
     name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
 
-    sectors: Mapped[list["Sector"]] = relationship("Sector", back_populates="district", cascade="all, delete-orphan")
+    sectors: Mapped[list["Sector"]] = relationship(
+        "Sector", back_populates="district", cascade="all, delete-orphan"
+    )
 
 
 class Sector(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "sectors"
-    __table_args__ = (
-        UniqueConstraint("district_id", "name", name="uq_sector_district_name"),
-    )
+    __table_args__ = (UniqueConstraint("district_id", "name", name="uq_sector_district_name"),)
 
     district_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -42,14 +42,14 @@ class Sector(Base, UUIDMixin, TimestampMixin):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
 
     district: Mapped["District"] = relationship("District", back_populates="sectors")
-    schools: Mapped[list["School"]] = relationship("School", back_populates="sector", cascade="all, delete-orphan")
+    schools: Mapped[list["School"]] = relationship(
+        "School", back_populates="sector", cascade="all, delete-orphan"
+    )
 
 
 class School(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "schools"
-    __table_args__ = (
-        UniqueConstraint("sector_id", "name", name="uq_school_sector_name"),
-    )
+    __table_args__ = (UniqueConstraint("sector_id", "name", name="uq_school_sector_name"),)
 
     sector_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -67,4 +67,6 @@ class School(Base, UUIDMixin, TimestampMixin):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     sector: Mapped["Sector"] = relationship("Sector", back_populates="schools")
-    classes: Mapped[list["Class"]] = relationship("Class", back_populates="school", cascade="all, delete-orphan")
+    classes: Mapped[list["Class"]] = relationship(
+        "Class", back_populates="school", cascade="all, delete-orphan"
+    )

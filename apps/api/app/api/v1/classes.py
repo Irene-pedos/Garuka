@@ -14,14 +14,21 @@ from app.schemas.student import ClassCreate, ClassResponse, ClassUpdate
 router = APIRouter(tags=["classes"])
 
 
-@router.get("/schools/{school_id}/classes", response_model=list[ClassResponse], operation_id="list_school_classes")
+@router.get(
+    "/schools/{school_id}/classes",
+    response_model=list[ClassResponse],
+    operation_id="list_school_classes",
+)
 async def list_school_classes(
     school_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     if current_user.role == RoleEnum.head_teacher and current_user.school_id != school_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot access classes outside your school")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot access classes outside your school",
+        )
 
     query = select(Class).where(Class.school_id == school_id).order_by(Class.grade, Class.name)
     result = await db.execute(query)
@@ -41,7 +48,10 @@ async def create_school_class(
     db: AsyncSession = Depends(get_db),
 ):
     if current_user.role == RoleEnum.head_teacher and current_user.school_id != school_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot create classes outside your school")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot create classes outside your school",
+        )
 
     school = await db.get(School, school_id)
     if not school:
@@ -72,7 +82,9 @@ async def update_class(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Class not found")
 
     if current_user.role == RoleEnum.head_teacher and current_user.school_id != c.school_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot update class outside your school")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Cannot update class outside your school"
+        )
 
     if req.name is not None:
         c.name = req.name.strip()

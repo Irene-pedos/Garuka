@@ -30,16 +30,33 @@ if TYPE_CHECKING:
 class_teachers = Table(
     "class_teachers",
     Base.metadata,
-    Column("class_id", UUID(as_uuid=True), ForeignKey("classes.id", ondelete="CASCADE"), primary_key=True),
-    Column("user_id", UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "class_id",
+        UUID(as_uuid=True),
+        ForeignKey("classes.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "user_id", UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    ),
 )
 
 # Many-to-many relationship between students and guardians
 student_guardians = Table(
     "student_guardians",
     Base.metadata,
-    Column("student_id", UUID(as_uuid=True), ForeignKey("students.id", ondelete="CASCADE"), primary_key=True),
-    Column("guardian_id", UUID(as_uuid=True), ForeignKey("guardians.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "student_id",
+        UUID(as_uuid=True),
+        ForeignKey("students.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
+    Column(
+        "guardian_id",
+        UUID(as_uuid=True),
+        ForeignKey("guardians.id", ondelete="CASCADE"),
+        primary_key=True,
+    ),
     Column("relationship", String(50), nullable=True),
     Column("is_primary", Boolean, default=False, nullable=False),
 )
@@ -110,14 +127,14 @@ class Class(Base, UUIDMixin, TimestampMixin):
     )
 
     school: Mapped["School"] = relationship("School", back_populates="classes")
-    students: Mapped[list["Student"]] = relationship("Student", back_populates="class_group", cascade="all, delete-orphan")
+    students: Mapped[list["Student"]] = relationship(
+        "Student", back_populates="class_group", cascade="all, delete-orphan"
+    )
 
 
 class Student(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "students"
-    __table_args__ = (
-        UniqueConstraint("class_id", "roll_number", name="uq_student_class_roll"),
-    )
+    __table_args__ = (UniqueConstraint("class_id", "roll_number", name="uq_student_class_roll"),)
 
     school_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -131,10 +148,14 @@ class Student(Base, UUIDMixin, TimestampMixin):
         nullable=False,
         index=True,
     )
-    student_code: Mapped[str | None] = mapped_column(String(50), unique=True, nullable=True, index=True)
+    student_code: Mapped[str | None] = mapped_column(
+        String(50), unique=True, nullable=True, index=True
+    )
     roll_number: Mapped[int] = mapped_column(Integer, nullable=False)
     full_name: Mapped[str] = mapped_column(String(150), nullable=False)
-    sex: Mapped[SexEnum | None] = mapped_column(SQLEnum(SexEnum, name="student_sex_enum"), nullable=True)
+    sex: Mapped[SexEnum | None] = mapped_column(
+        SQLEnum(SexEnum, name="student_sex_enum"), nullable=True
+    )
     birth_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_repeater: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     status: Mapped[StudentStatusEnum] = mapped_column(

@@ -67,16 +67,18 @@ class AttendanceSubmission(Base, UUIDMixin, TimestampMixin):
         nullable=False,
     )
     absent_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    submitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
+    submitted_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, nullable=False
+    )
 
-    absences: Mapped[list["Absence"]] = relationship("Absence", back_populates="submission", cascade="all, delete-orphan")
+    absences: Mapped[list["Absence"]] = relationship(
+        "Absence", back_populates="submission", cascade="all, delete-orphan"
+    )
 
 
 class Absence(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "absences"
-    __table_args__ = (
-        UniqueConstraint("student_id", "date", name="uq_absence_student_date"),
-    )
+    __table_args__ = (UniqueConstraint("student_id", "date", name="uq_absence_student_date"),)
 
     student_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
@@ -108,4 +110,6 @@ class Absence(Base, UUIDMixin, TimestampMixin):
     )
     reason_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    submission: Mapped["AttendanceSubmission"] = relationship("AttendanceSubmission", back_populates="absences")
+    submission: Mapped["AttendanceSubmission"] = relationship(
+        "AttendanceSubmission", back_populates="absences"
+    )

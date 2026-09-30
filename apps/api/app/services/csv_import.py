@@ -50,7 +50,11 @@ async def import_students_csv(
             created=0,
             updated=0,
             skipped=0,
-            errors=[CSVImportRowError(row=1, message=f"Missing required columns: {', '.join(sorted(missing))}")],
+            errors=[
+                CSVImportRowError(
+                    row=1, message=f"Missing required columns: {', '.join(sorted(missing))}"
+                )
+            ],
         )
 
     errors: list[CSVImportRowError] = []
@@ -88,11 +92,21 @@ async def import_students_csv(
             if roll_number <= 0:
                 raise ValueError
         except ValueError:
-            errors.append(CSVImportRowError(row=row_index, message=f"Invalid roll_number '{roll_str}', positive integer expected"))
+            errors.append(
+                CSVImportRowError(
+                    row=row_index,
+                    message=f"Invalid roll_number '{roll_str}', positive integer expected",
+                )
+            )
             continue
 
         if not guardian_phone or not validate_e164(guardian_phone):
-            errors.append(CSVImportRowError(row=row_index, message=f"Invalid Rwanda phone number '{guardian_phone}' (must be +2507XXXXXXXX)"))
+            errors.append(
+                CSVImportRowError(
+                    row=row_index,
+                    message=f"Invalid Rwanda phone number '{guardian_phone}' (must be +2507XXXXXXXX)",
+                )
+            )
             continue
 
         if not guardian_name:
@@ -145,7 +159,9 @@ async def import_students_csv(
 
         # Check existing student in class with roll_number
         stud_res = await db.execute(
-            select(Student).where(Student.class_id == target_class.id, Student.roll_number == roll_number)
+            select(Student).where(
+                Student.class_id == target_class.id, Student.roll_number == roll_number
+            )
         )
         existing_student = stud_res.scalar_one_or_none()
 
