@@ -71,6 +71,7 @@ async def seed():
         default_pin = get_pin_hash("4821")
 
         users_data = [
+            # (full_name, email, phone_e164, role, pwd, pin, school_id, sector_id, district_id)
             (
                 "Admin User",
                 "admin@garuka.rw",
@@ -104,10 +105,11 @@ async def seed():
                 sector.id,
                 None,
             ),
+            # Head Teacher — MTN Rwanda +250788xxxxxx
             (
                 "Head Teacher",
                 "head@gsdemo1.rw",
-                "+250780000000",
+                "+250788100001",
                 RoleEnum.head_teacher,
                 default_pwd,
                 default_pin,
@@ -115,10 +117,11 @@ async def seed():
                 None,
                 None,
             ),
+            # Teacher Uwimana — Airtel Rwanda +250736xxxxxx
             (
                 "Teacher Uwimana",
                 "teacher1@gsdemo1.rw",
-                "+250780000001",
+                "+250736200001",
                 RoleEnum.teacher,
                 default_pwd,
                 default_pin,
@@ -126,10 +129,11 @@ async def seed():
                 None,
                 None,
             ),
+            # Teacher Mugisha — MTN Rwanda +250788xxxxxx
             (
                 "Teacher Mugisha",
                 "teacher2@gsdemo1.rw",
-                "+250780000002",
+                "+250788200002",
                 RoleEnum.teacher,
                 default_pwd,
                 default_pin,
@@ -137,10 +141,11 @@ async def seed():
                 None,
                 None,
             ),
+            # Mentor Keza — Airtel Rwanda +250736xxxxxx
             (
                 "Mentor Keza",
                 None,
-                "+250780000011",
+                "+250736300001",
                 RoleEnum.mentor,
                 None,
                 default_pin,
@@ -148,10 +153,11 @@ async def seed():
                 sector.id,
                 None,
             ),
+            # Mentor Gasana — MTN Rwanda +250788xxxxxx
             (
                 "Mentor Gasana",
                 None,
-                "+250780000012",
+                "+250788300002",
                 RoleEnum.mentor,
                 None,
                 default_pin,
@@ -227,14 +233,37 @@ async def seed():
         class_p5a = classes["P5 A"]
 
         # 6. Students & Guardians (30 students)
+        # 20 guardians with realistic Rwandan names and phone numbers
+        guardian_data = [
+            ("Uwimana Claudine",  "+250788401001", "rw"),  # Mother  1
+            ("Habimana Jean",     "+250736401002", "rw"),  # Father  2
+            ("Mukamana Dancille", "+250788401003", "rw"),  # Mother  3
+            ("Nshimiyimana Eric", "+250736401004", "rw"),  # Father  4
+            ("Umubyeyi Berthe",   "+250788401005", "rw"),  # Mother  5
+            ("Nsengimana Pascal", "+250736401006", "rw"),  # Father  6
+            ("Mukabaranga Alice", "+250788401007", "rw"),  # Mother  7
+            ("Hakizimana Didier", "+250736401008", "rw"),  # Father  8
+            ("Ingabire Vestine",  "+250788401009", "rw"),  # Mother  9
+            ("Niyonzima Charles", "+250736401010", "rw"),  # Father 10
+            ("Mukagasana Felixa", "+250788401011", "rw"),  # Mother 11
+            ("Bizimungu Albert",  "+250736401012", "rw"),  # Father 12
+            ("Uwera Scholastique","+250788401013", "rw"),  # Mother 13
+            ("Nkurunziza Felix",  "+250736401014", "rw"),  # Father 14
+            ("Mukagasana Rose",   "+250788401015", "rw"),  # Mother 15
+            ("Habimana Emmanuel", "+250736401016", "rw"),  # Father 16
+            ("Uwimana Jeannette", "+250788401017", "rw"),  # Mother 17
+            ("Nzabonimana Simon", "+250736401018", "rw"),  # Father 18
+            ("Mukamurigo Claire", "+250788401019", "rw"),  # Mother 19
+            ("Ntaganira Gilbert", "+250736401020", "rw"),  # Father 20
+        ]
+
         guardians = []
-        for i in range(1, 21):
-            g_phone = f"+25078000{100 + i:04d}"
+        for full_name, g_phone, lang in guardian_data:
             g_res = await db.execute(select(Guardian).where(Guardian.phone_e164 == g_phone))
             g = g_res.scalar_one_or_none()
             if not g:
                 g = Guardian(
-                    full_name=f"Parent {i}",
+                    full_name=full_name,
                     phone_e164=g_phone,
                     language=LanguageEnum.rw,
                     consent_source=ConsentSourceEnum.school_form,
