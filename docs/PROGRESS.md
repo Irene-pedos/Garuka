@@ -21,16 +21,24 @@
 - [x] M1.9: Build Students list and CSV Import wizard with preview on dashboard.
 
 ## Milestone M2: Teacher USSD, Attendance & SMS Outbox
-- [ ] M2.1: Implement USSD identity resolution (phone lookup for staff vs guardian vs both).
-- [ ] M2.2: Implement USSD staff PIN setup and verification flow with 3-attempt lockout.
-- [ ] M2.3: Build stateless USSD replay engine with `0` (back) and `00` (cancel) handling.
-- [ ] M2.4: Build Teacher flow screens (`T_CLASS`, `T_DATE`, `T_ROLL`, `T_CONFIRM`).
-- [ ] M2.5: Implement attendance commit transaction (submission + absence records + voiding).
-- [ ] M2.6: Implement `sms_outbox` table, `SmsProvider` interface, `ConsoleSmsProvider`, and AT provider.
-- [ ] M2.7: Build background SMS outbox worker respecting quiet hours (19:00–07:00 Kigali).
-- [ ] M2.8: Build dashboard Classes & Attendance compliance grid and manual entry fallback.
+- [x] M2.1: Implement USSD identity resolution (phone lookup for staff vs guardian vs both).
+- [x] M2.2: Implement USSD staff PIN setup and verification flow with 3-attempt lockout.
+- [x] M2.3: Build stateless USSD replay engine with `0` (back) and `00` (cancel) handling.
+- [x] M2.4: Build Teacher flow screens (`T_CLASS`, `T_DATE`, `T_ROLL`, `T_CONFIRM`).
+- [x] M2.5: Implement attendance commit transaction (submission + absence records + voiding).
+- [x] M2.6: Implement `sms_outbox` table, `SmsProvider` interface, `ConsoleSmsProvider`, and AT provider.
+- [x] M2.7: Build background SMS outbox worker respecting quiet hours (19:00–07:00 Kigali).
+- [x] M2.8: Build dashboard Classes & Attendance compliance grid and manual entry fallback.
 
 ### Current State
-- **Done:** Milestone M1 complete! All backend endpoints, RBAC scoping, models, migrations, tests, seed data, and frontend dashboard pages (Login, Role Nav, Students, CSV Import, Users, Schools) verified and building cleanly.
-- **In Progress:** Ready for Milestone M2 (Teacher USSD, Attendance, and SMS Outbox).
-- **Next:** M2.1 through M2.8.
+- **Done:** Milestone M0, Milestone M1, and Milestone M2 complete!
+  - Teacher USSD replay engine, identity resolution, Argon2 PIN setup/auth with 3-attempt 30m lockout.
+  - Teacher attendance USSD screens: single class auto-selection, date choice, roll accumulation, `0` finish, `Bika` confirmation, and atomic commit node.
+  - `sms_outbox` with quiet hours (19:00–07:00 Kigali), transactional visit code bypass, deduplication keys, and AT SMS delivery webhook.
+  - Attendance REST API: `GET /classes/{id}/attendance`, `POST /classes/{id}/attendance` (dashboard fallback), `DELETE /absences/{id}` (voiding with audit log), and `GET /attendance/compliance` (class x day compliance grid with CSV export).
+  - Next.js Dashboard: `/dashboard/attendance` interactive compliance grid (submitted/missing/off) and manual attendance entry & voiding fallback.
+  - All 28 automated integration/unit tests passing (`uv run pytest -v`).
+  - Next.js Turbopack build verified cleanly (`npm run build`).
+- **In Progress:** Ready for Milestone M3 (Rules Engine, Cases & Mentor USSD).
+- **Next:** Milestone M3: M3.1 through M3.8.
+

@@ -166,3 +166,123 @@ export async function uploadStudentsCSV(
 
   return res.json();
 }
+
+export async function fetchSchoolClasses(schoolId: string): Promise<
+  Array<{
+    id: string;
+    name: string;
+    grade: number;
+    academic_year: number;
+    school_id: string;
+  }>
+> {
+  const res = await fetch(`${API_BASE_URL}/schools/${schoolId}/classes`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch classes");
+  return res.json();
+}
+
+export async function fetchAttendanceCompliance(
+  schoolId: string,
+  fromDate?: string,
+  toDate?: string
+): Promise<{
+  school_id: string;
+  school_name: string;
+  from_date: string;
+  to_date: string;
+  compliance_pct: number;
+  classes: Array<{
+    class_id: string;
+    class_name: string;
+    grade: number;
+    days: Array<{
+      date: string;
+      status: "submitted" | "missing" | "non_school_day";
+      absent_count: number | null;
+    }>;
+  }>;
+}> {
+  const url = new URL(`${API_BASE_URL}/attendance/compliance`);
+  url.searchParams.append("school_id", schoolId);
+  if (fromDate) url.searchParams.append("from", fromDate);
+  if (toDate) url.searchParams.append("to", toDate);
+
+  const res = await fetch(url.toString(), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch attendance compliance");
+  return res.json();
+}
+
+export async function fetchClassAttendance(
+  classId: string,
+  date?: string
+): Promise<{
+  class_id: string;
+  class_name: string;
+  date: string;
+  submission: {
+    id: string;
+    class_id: string;
+    date: string;
+    submitted_by: string;
+    source: string;
+    absent_count: number;
+    submitted_at: string;
+  } | null;
+  students: Array<{
+    id: string;
+    roll_number: number;
+    full_name: string;
+    is_absent: boolean;
+    absence_id: string | null;
+    reason_code: string | null;
+    status: string | null;
+  }>;
+}> {
+  const url = new URL(`${API_BASE_URL}/classes/${classId}/attendance`);
+  if (date) url.searchParams.append("date", date);
+
+  const res = await fetch(url.toString(), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch class attendance");
+  return res.json();
+}
+
+export async function submitClassAttendance(
+  classId: string,
+  data: { date: string; absent_student_ids: string[] }
+): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/classes/${classId}/attendance`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to submit attendance");
+  }
+  return res.json();
+}
+
+export async function voidAbsence(absenceId: string): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/absences/${absenceId}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to void absence");
+  return res.json();
+}
+
+export function getComplianceCSVUrl(schoolId: string, fromDate?: string, toDate?: string): string {
+  const url = new URL(`${API_BASE_URL}/attendance/compliance`);
+  url.searchParams.append("school_id", schoolId);
+  url.searchParams.append("format", "csv");
+  if (fromDate) url.searchParams.append("from", fromDate);
+  if (toDate) url.searchParams.append("to", toDate);
+  return url.toString();
+}
+
