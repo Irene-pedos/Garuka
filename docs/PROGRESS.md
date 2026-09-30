@@ -12,15 +12,15 @@
 ## Milestone M1: Core Data, Auth & Admin REST
 - [x] M1.1: Define SQLAlchemy models for geography (`districts`, `sectors`, `schools`) and migrations.
 - [x] M1.2: Define models for users, guardians, classes, students, and calendar (`terms`, `holidays`).
-- [ ] M1.3: Implement password hashing (Argon2), JWT token generation, and `POST /auth/login`, `/me`.
-- [ ] M1.4: Implement RBAC dependency system enforcing geographic/school scoping per role.
-- [ ] M1.5: Build CRUD endpoints for schools, sectors, classes, and users with PIN reset.
-- [ ] M1.6: Implement `POST /students/import` CSV handler with dry-run validation.
-- [ ] M1.7: Write idempotent seed script (`scripts/seed.py`) with sample district, school, users.
+- [x] M1.3: Implement password hashing (Argon2), JWT token generation, and `POST /auth/login`, `/me`.
+- [x] M1.4: Implement RBAC dependency system enforcing geographic/school scoping per role.
+- [x] M1.5: Build CRUD endpoints for schools, sectors, classes, and users with PIN reset.
+- [x] M1.6: Implement `POST /students/import` CSV handler with dry-run validation.
+- [x] M1.7: Write idempotent seed script (`scripts/seed.py`) with sample district, school, users.
 - [ ] M1.8: Build web dashboard login, role-based navigation sidebar, and Users/Schools management.
 - [ ] M1.9: Build Students list and CSV Import wizard with preview on dashboard.
 
 ### Current State
-- **Done:** M1.1 & M1.2 complete. Complete schema of 24 tables with indexes and constraints migrated in PostgreSQL.
-- **In Progress:** M1.3 - Security, password hashing (Argon2), JWT token issuance, and `/auth/login`, `/auth/refresh`, `/auth/me` endpoints.
-- **Next:** M1.4 - RBAC scope dependencies and tests.
+- **Done:** Backend M1 tasks (M1.1 through M1.7) complete and fully verified with 18 automated unit tests.
+- **In Progress:** Frontend M1 tasks (M1.8: Login, Role Navigation, Admin Users/Schools; M1.9: Students & CSV Import Wizard).
+- **Next:** Complete M1.8 and M1.9, verify frontend Turbopack build, and demonstrate dashboard functionality.

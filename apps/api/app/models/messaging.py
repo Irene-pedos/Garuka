@@ -1,18 +1,22 @@
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any
+
 from sqlalchemy import (
     Boolean,
     DateTime,
-    Enum as SQLEnum,
     ForeignKey,
     Integer,
     String,
     Text,
 )
+from sqlalchemy import (
+    Enum as SQLEnum,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
+
 from app.models.base import Base, TimestampMixin, UUIDMixin, utc_now
 
 
@@ -29,26 +33,26 @@ class SmsOutbox(Base, UUIDMixin, TimestampMixin):
 
     to_e164: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     template_key: Mapped[str] = mapped_column(String(50), nullable=False)
-    params: Mapped[Dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
+    params: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
-    dedupe_key: Mapped[Optional[str]] = mapped_column(String(100), unique=True, nullable=True, index=True)
+    dedupe_key: Mapped[str | None] = mapped_column(String(100), unique=True, nullable=True, index=True)
     status: Mapped[SmsStatusEnum] = mapped_column(
         SQLEnum(SmsStatusEnum, name="sms_status_enum"),
         default=SmsStatusEnum.pending,
         nullable=False,
         index=True,
     )
-    provider_message_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    provider_message_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
     attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    last_error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    last_error: Mapped[str | None] = mapped_column(Text, nullable=True)
     scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)
-    sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    related_student_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    related_student_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("students.id", ondelete="SET NULL"),
         nullable=True,
     )
-    related_case_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    related_case_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("cases.id", ondelete="SET NULL"),
         nullable=True,
@@ -60,7 +64,7 @@ class UssdSession(Base):
 
     session_id: Mapped[str] = mapped_column(String(100), primary_key=True)
     phone_hash: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
-    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
@@ -87,7 +91,7 @@ class AppSetting(Base):
 
     key: Mapped[str] = mapped_column(String(100), primary_key=True)
     value: Mapped[Any] = mapped_column(JSONB, nullable=False)
-    updated_by: Mapped[Optional[uuid.UUID]] = mapped_column(
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
@@ -98,7 +102,7 @@ class AppSetting(Base):
 class AuditLog(Base, UUIDMixin):
     __tablename__ = "audit_logs"
 
-    actor_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    actor_user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
@@ -106,7 +110,7 @@ class AuditLog(Base, UUIDMixin):
     actor_role: Mapped[str] = mapped_column(String(50), nullable=False)
     action: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     entity_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
-    entity_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    ip: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    meta: Mapped[Dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
+    entity_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    ip: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    meta: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False, index=True)

@@ -3,7 +3,12 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.v1.auth import router as auth_router
+from app.api.v1.classes import router as classes_router
+from app.api.v1.geo import router as geo_router
 from app.api.v1.health import router as health_router
+from app.api.v1.students import router as students_router
+from app.api.v1.users import router as users_router
 from app.api.v1.ussd_webhook import router as ussd_router
 from app.api.v1.ussd_webhook import ussd_callback
 from app.core.config import settings
@@ -37,12 +42,19 @@ app.add_middleware(
 
 # Canonical API v1 endpoints
 app.include_router(health_router, prefix="/api/v1")
+app.include_router(auth_router, prefix="/api/v1")
+app.include_router(geo_router, prefix="/api/v1")
+app.include_router(users_router, prefix="/api/v1")
+app.include_router(classes_router, prefix="/api/v1")
+app.include_router(students_router, prefix="/api/v1")
 app.include_router(ussd_router, prefix="/api/v1")
+
 
 # Convenience root endpoints
 @app.get("/health", include_in_schema=False)
 async def root_health():
     from app.api.v1.health import health_check
+
     return await health_check()
 
 

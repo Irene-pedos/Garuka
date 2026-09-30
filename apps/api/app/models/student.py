@@ -1,23 +1,30 @@
 import uuid
 from datetime import date, datetime
 from enum import Enum
-from typing import List, Optional
+from typing import TYPE_CHECKING
+
 from sqlalchemy import (
     Boolean,
     Column,
     Date,
     DateTime,
-    Enum as SQLEnum,
     ForeignKey,
     Integer,
     String,
     Table,
     UniqueConstraint,
 )
+from sqlalchemy import (
+    Enum as SQLEnum,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.models.base import Base, TimestampMixin, UUIDMixin
 from app.models.user import LanguageEnum
+
+if TYPE_CHECKING:
+    from app.models.geo import School
 
 # Many-to-many relationship between classes and teachers
 class_teachers = Table(
@@ -66,14 +73,14 @@ class Guardian(Base, UUIDMixin, TimestampMixin):
         default=LanguageEnum.rw,
         nullable=False,
     )
-    consent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
-    consent_source: Mapped[Optional[ConsentSourceEnum]] = mapped_column(
+    consent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    consent_source: Mapped[ConsentSourceEnum | None] = mapped_column(
         SQLEnum(ConsentSourceEnum, name="consent_source_enum"),
         nullable=True,
     )
     sms_opt_out: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
-    students: Mapped[List["Student"]] = relationship(
+    students: Mapped[list["Student"]] = relationship(
         "Student",
         secondary=student_guardians,
         back_populates="guardians",
@@ -95,7 +102,7 @@ class Class(Base, UUIDMixin, TimestampMixin):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     grade: Mapped[int] = mapped_column(Integer, nullable=False)
     academic_year: Mapped[int] = mapped_column(Integer, nullable=False)
-    class_teacher_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    class_teacher_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
@@ -103,7 +110,7 @@ class Class(Base, UUIDMixin, TimestampMixin):
     )
 
     school: Mapped["School"] = relationship("School", back_populates="classes")
-    students: Mapped[List["Student"]] = relationship("Student", back_populates="class_group", cascade="all, delete-orphan")
+    students: Mapped[list["Student"]] = relationship("Student", back_populates="class_group", cascade="all, delete-orphan")
 
 
 class Student(Base, UUIDMixin, TimestampMixin):
@@ -124,11 +131,11 @@ class Student(Base, UUIDMixin, TimestampMixin):
         nullable=False,
         index=True,
     )
-    student_code: Mapped[Optional[str]] = mapped_column(String(50), unique=True, nullable=True, index=True)
+    student_code: Mapped[str | None] = mapped_column(String(50), unique=True, nullable=True, index=True)
     roll_number: Mapped[int] = mapped_column(Integer, nullable=False)
     full_name: Mapped[str] = mapped_column(String(150), nullable=False)
-    sex: Mapped[Optional[SexEnum]] = mapped_column(SQLEnum(SexEnum, name="student_sex_enum"), nullable=True)
-    birth_year: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    sex: Mapped[SexEnum | None] = mapped_column(SQLEnum(SexEnum, name="student_sex_enum"), nullable=True)
+    birth_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
     is_repeater: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     status: Mapped[StudentStatusEnum] = mapped_column(
         SQLEnum(StudentStatusEnum, name="student_status_enum"),
@@ -139,7 +146,7 @@ class Student(Base, UUIDMixin, TimestampMixin):
     enrolled_at: Mapped[date] = mapped_column(Date, nullable=False, default=date.today)
 
     class_group: Mapped["Class"] = relationship("Class", back_populates="students")
-    guardians: Mapped[List["Guardian"]] = relationship(
+    guardians: Mapped[list["Guardian"]] = relationship(
         "Guardian",
         secondary=student_guardians,
         back_populates="students",

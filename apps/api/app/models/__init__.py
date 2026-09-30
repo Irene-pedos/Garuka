@@ -1,17 +1,3 @@
-from app.models.base import Base
-from app.models.geo import District, School, SchoolLevelEnum, Sector
-from app.models.user import LanguageEnum, RoleEnum, User
-from app.models.student import (
-    Class,
-    ConsentSourceEnum,
-    Guardian,
-    SexEnum,
-    Student,
-    StudentStatusEnum,
-    class_teachers,
-    student_guardians,
-)
-from app.models.calendar import Holiday, Term
 from app.models.attendance import (
     Absence,
     AbsenceStatusEnum,
@@ -20,6 +6,8 @@ from app.models.attendance import (
     ReasonSourceEnum,
     SubmissionSourceEnum,
 )
+from app.models.base import Base
+from app.models.calendar import Holiday, Term
 from app.models.case import (
     BarrierCodeEnum,
     Case,
@@ -33,6 +21,7 @@ from app.models.case import (
     VisitCode,
     VisitOutcomeEnum,
 )
+from app.models.geo import District, School, SchoolLevelEnum, Sector
 from app.models.messaging import (
     AppSetting,
     AuditLog,
@@ -41,47 +30,58 @@ from app.models.messaging import (
     UssdRequest,
     UssdSession,
 )
+from app.models.student import (
+    Class,
+    ConsentSourceEnum,
+    Guardian,
+    SexEnum,
+    Student,
+    StudentStatusEnum,
+    class_teachers,
+    student_guardians,
+)
+from app.models.user import LanguageEnum, RoleEnum, User
 
 __all__ = [
-    "Base",
-    "District",
-    "Sector",
-    "School",
-    "SchoolLevelEnum",
-    "RoleEnum",
-    "LanguageEnum",
-    "User",
-    "ConsentSourceEnum",
-    "StudentStatusEnum",
-    "SexEnum",
-    "Guardian",
-    "Class",
-    "Student",
-    "class_teachers",
-    "student_guardians",
-    "Term",
-    "Holiday",
-    "SubmissionSourceEnum",
-    "AbsenceStatusEnum",
-    "ReasonCodeEnum",
-    "ReasonSourceEnum",
-    "AttendanceSubmission",
     "Absence",
-    "CaseStatusEnum",
-    "CaseTriggerEnum",
-    "VerifiedMethodEnum",
-    "VisitOutcomeEnum",
+    "AbsenceStatusEnum",
+    "AppSetting",
+    "AttendanceSubmission",
+    "AuditLog",
     "BarrierCodeEnum",
-    "HelpRequestStatusEnum",
+    "Base",
     "Case",
     "CaseEvent",
-    "MentorVisit",
-    "VisitCode",
+    "CaseStatusEnum",
+    "CaseTriggerEnum",
+    "Class",
+    "ConsentSourceEnum",
+    "District",
+    "Guardian",
     "HelpRequest",
-    "SmsStatusEnum",
+    "HelpRequestStatusEnum",
+    "Holiday",
+    "LanguageEnum",
+    "MentorVisit",
+    "ReasonCodeEnum",
+    "ReasonSourceEnum",
+    "RoleEnum",
+    "School",
+    "SchoolLevelEnum",
+    "Sector",
+    "SexEnum",
     "SmsOutbox",
-    "UssdSession",
+    "SmsStatusEnum",
+    "Student",
+    "StudentStatusEnum",
+    "SubmissionSourceEnum",
+    "Term",
+    "User",
     "UssdRequest",
-    "AppSetting",
-    "AuditLog",
+    "UssdSession",
+    "VerifiedMethodEnum",
+    "VisitCode",
+    "VisitOutcomeEnum",
+    "class_teachers",
+    "student_guardians",
 ]

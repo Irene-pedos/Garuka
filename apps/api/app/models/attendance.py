@@ -1,17 +1,20 @@
 import uuid
 from datetime import date, datetime
 from enum import Enum
-from typing import Optional
+
 from sqlalchemy import (
     Date,
     DateTime,
-    Enum as SQLEnum,
     ForeignKey,
     Integer,
     UniqueConstraint,
 )
+from sqlalchemy import (
+    Enum as SQLEnum,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.models.base import Base, TimestampMixin, UUIDMixin, utc_now
 
 
@@ -94,15 +97,15 @@ class Absence(Base, UUIDMixin, TimestampMixin):
         nullable=False,
         index=True,
     )
-    reason_code: Mapped[Optional[ReasonCodeEnum]] = mapped_column(
+    reason_code: Mapped[ReasonCodeEnum | None] = mapped_column(
         SQLEnum(ReasonCodeEnum, name="absence_reason_code_enum"),
         nullable=True,
         index=True,
     )
-    reason_source: Mapped[Optional[ReasonSourceEnum]] = mapped_column(
+    reason_source: Mapped[ReasonSourceEnum | None] = mapped_column(
         SQLEnum(ReasonSourceEnum, name="absence_reason_source_enum"),
         nullable=True,
     )
-    reason_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    reason_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     submission: Mapped["AttendanceSubmission"] = relationship("AttendanceSubmission", back_populates="absences")

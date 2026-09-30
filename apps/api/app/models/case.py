@@ -1,19 +1,23 @@
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from sqlalchemy import (
     Boolean,
     DateTime,
-    Enum as SQLEnum,
     ForeignKey,
     Index,
     Integer,
     String,
     Text,
 )
+from sqlalchemy import (
+    Enum as SQLEnum,
+)
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from app.models.base import Base, TimestampMixin, UUIDMixin, utc_now
 
 
@@ -95,24 +99,24 @@ class Case(Base, UUIDMixin, TimestampMixin):
         nullable=False,
     )
     risk_score: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    mentor_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    mentor_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
     )
-    sector_officer_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    sector_officer_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )
     opened_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
-    resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_evaluated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
     reopened_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
-    events: Mapped[List["CaseEvent"]] = relationship("CaseEvent", back_populates="case", cascade="all, delete-orphan")
-    visits: Mapped[List["MentorVisit"]] = relationship("MentorVisit", back_populates="case", cascade="all, delete-orphan")
+    events: Mapped[list["CaseEvent"]] = relationship("CaseEvent", back_populates="case", cascade="all, delete-orphan")
+    visits: Mapped[list["MentorVisit"]] = relationship("MentorVisit", back_populates="case", cascade="all, delete-orphan")
 
 
 class CaseEvent(Base, UUIDMixin):
@@ -125,12 +129,12 @@ class CaseEvent(Base, UUIDMixin):
         index=True,
     )
     type: Mapped[str] = mapped_column(String(50), nullable=False)
-    actor_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+    actor_user_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="SET NULL"),
         nullable=True,
     )
-    payload: Mapped[Dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
 
     case: Mapped["Case"] = relationship("Case", back_populates="events")
@@ -162,11 +166,11 @@ class MentorVisit(Base, UUIDMixin, TimestampMixin):
         SQLEnum(VisitOutcomeEnum, name="visit_outcome_enum"),
         nullable=False,
     )
-    barrier_code: Mapped[Optional[BarrierCodeEnum]] = mapped_column(
+    barrier_code: Mapped[BarrierCodeEnum | None] = mapped_column(
         SQLEnum(BarrierCodeEnum, name="barrier_code_enum"),
         nullable=True,
     )
-    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     case: Mapped["Case"] = relationship("Case", back_populates="visits")
 
@@ -189,7 +193,7 @@ class VisitCode(Base, UUIDMixin, TimestampMixin):
     code_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
     attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    used_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class HelpRequest(Base, UUIDMixin, TimestampMixin):
