@@ -2,7 +2,7 @@ import logging
 import time
 from datetime import timedelta
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -27,7 +27,7 @@ from app.models.case import (
     VisitOutcomeEnum,
 )
 from app.models.messaging import UssdRequest, UssdSession
-from app.models.student import Class, Student, StudentStatusEnum
+from app.models.student import Class, Student, StudentStatusEnum, class_teachers
 from app.models.user import LanguageEnum, RoleEnum, User
 from app.services.rules_engine import evaluate_student
 from app.services.sms.outbox_worker import enqueue_sms
@@ -777,11 +777,26 @@ async def execute_mark_absences_flow(
     start_time: float,
     db: AsyncSession,
 ) -> tuple[str, str]:
-    # 1. Select Class
-    classes_res = await db.execute(
-        select(Class).where(Class.school_id == user.school_id).order_by(Class.name)
+    # 1. Select Class: Check classes assigned to this teacher first
+    teacher_classes_res = await db.execute(
+        select(Class)
+        .where(
+            or_(
+                Class.class_teacher_id == user.id,
+                Class.id.in_(
+                    select(class_teachers.c.class_id).where(class_teachers.c.user_id == user.id)
+                ),
+            )
+        )
+        .order_by(Class.name)
     )
-    classes = classes_res.scalars().all()
+    classes = teacher_classes_res.scalars().all()
+    if not classes and user.school_id:
+        classes_res = await db.execute(
+            select(Class).where(Class.school_id == user.school_id).order_by(Class.name)
+        )
+        classes = classes_res.scalars().all()
+
     if not classes:
         rendered = render_ussd_response("END", "No classes registered for your school.")
         await save_request_cache(db, session_id, n_inputs, "T_CLASS", "END", rendered, start_time)
@@ -790,8 +805,9 @@ async def execute_mark_absences_flow(
     if len(classes) == 1:
         selected_class = classes[0]
     else:
+        displayed_classes = classes[:5]
+        options = "\n".join([f"{idx + 1}. {c.name}" for idx, c in enumerate(displayed_classes)])
         if inp_idx >= n_inputs:
-            options = "\n".join([f"{idx + 1}. {c.name}" for idx, c in enumerate(classes)])
             body = f"Select class:\n{options}"
             rendered = render_ussd_response("CON", body)
             await save_request_cache(
@@ -803,11 +819,10 @@ async def execute_mark_absences_flow(
         inp_idx += 1
         try:
             c_idx = int(class_choice) - 1
-            if c_idx < 0 or c_idx >= len(classes):
+            if c_idx < 0 or c_idx >= len(displayed_classes):
                 raise ValueError
-            selected_class = classes[c_idx]
+            selected_class = displayed_classes[c_idx]
         except ValueError:
-            options = "\n".join([f"{idx + 1}. {c.name}" for idx, c in enumerate(classes)])
             body = get_msg("S_INVALID", lang) + f"Select class:\n{options}"
             rendered = render_ussd_response("CON", body)
             await save_request_cache(
