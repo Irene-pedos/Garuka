@@ -2,6 +2,17 @@
 
 All changes to REST API and Webhook contracts are tracked here, newest first.
 
+## [M3 Release] - 2026-09-30
+### Added
+- `GET /api/v1/cases` -> Returns role-scoped case list with filters (`status`, `level`, `school_id`, `sector_id`, `mentor_id`, `q`).
+- `GET /api/v1/cases/{id}` -> Returns comprehensive case file including metrics, 30-day absence heatmap, mentor home visits, and audit timeline.
+- `PATCH /api/v1/cases/{id}/assign` -> Reassigns mentor to case, transitions status to `mentor_assigned`, and logs audit event.
+- `POST /api/v1/cases/{id}/escalate` -> Escalates case to Level 3 (`escalated_sector`) with contextual note.
+- `POST /api/v1/cases/{id}/notes` -> Appends audit note to case timeline.
+- `POST /api/v1/cases/{id}/resolve` -> Resolves/closes case (`resolved_returned`, `closed_moved`, `closed_other`) with timestamp.
+- `GET /api/v1/mentors` -> Returns community mentors list with workload (active cases), 30-day visit count, and OTP verification percentage.
+- `POST /api/v1/ussd/{secret}` -> Added Mentor USSD journey (`M_MENU`, `M_CASES`, `M_CASE_DETAIL`, `M_CODE`, `M_OUTCOME`, `M_BARRIER`) with parent OTP code dispatch and verification.
+
 ## [M2 Release] - 2026-09-30
 ### Added
 - `POST /api/v1/ussd/{secret}` -> Full USSD replay state machine with identity resolution, PIN setup, PIN authentication, 30m lockout, and teacher attendance recording.

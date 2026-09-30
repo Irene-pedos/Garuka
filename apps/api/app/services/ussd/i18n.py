@@ -118,7 +118,58 @@ MESSAGES: dict[str, dict[LanguageEnum, str]] = {
         LanguageEnum.rw: "Abafite ikibazo:\n{lines}",
         LanguageEnum.fr: "Signales:\n{lines}",
     },
+    "M_MENU": {
+        LanguageEnum.en: "Garuka Mentor\n1. My cases\n2. Language",
+        LanguageEnum.rw: "Garuka Umujyanama\n1. Imanza zanjye\n2. Ururimi",
+        LanguageEnum.fr: "Garuka Mentor\n1. Mes dossiers\n2. Langue",
+    },
+    "M_CASES": {
+        LanguageEnum.en: "My cases ({n}):\n{lines}\n0. Back",
+        LanguageEnum.rw: "Imanza zanjye ({n}):\n{lines}\n0. Subira inyuma",
+        LanguageEnum.fr: "Mes dossiers ({n}):\n{lines}\n0. Retour",
+    },
+    "M_NO_CASES": {
+        LanguageEnum.en: "No active cases assigned to you.",
+        LanguageEnum.rw: "Nta manza zifunguye ufite kuri ubu.",
+        LanguageEnum.fr: "Aucun dossier actif ne vous est assigne.",
+    },
+    "M_CASE_DETAIL": {
+        LanguageEnum.en: "{child}, {class_name} {school_name}\nAbsent {absent_10d} of last 10 days.\nReason: {reason}\n1. Start visit\n0. Back",
+        LanguageEnum.rw: "{child}, {class_name} {school_name}\nAsibye iminsi {absent_10d} mu 10 iheruka.\nImpamvu: {reason}\n1. Tangira gusura\n0. Subira inyuma",
+        LanguageEnum.fr: "{child}, {class_name} {school_name}\nAbsent {absent_10d} des 10 derniers jours.\nMotif: {reason}\n1. Commencer visite\n0. Retour",
+    },
+    "M_CODE_PROMPT": {
+        LanguageEnum.en: "Code sent to parent. Enter 4-digit code shown by parent.\n0 = no code",
+        LanguageEnum.rw: "Kode yoherejwe ku mubyeyi. Shyiramo iyo yerekana (imibare 4).\n0 = Nta kode",
+        LanguageEnum.fr: "Code envoye au parent. Entrez le code a 4 chiffres.\n0 = pas de code",
+    },
+    "M_CODE_WRONG": {
+        LanguageEnum.en: "Wrong code. Start the visit again.",
+        LanguageEnum.rw: "Kode si yo. Ongera utangire gusura.",
+        LanguageEnum.fr: "Code incorrect. Recommencez la visite.",
+    },
+    "M_CODE_LOCKED": {
+        LanguageEnum.en: "Visit code locked. Start the visit again later.",
+        LanguageEnum.rw: "Kode y'isura yafunzwe. Ongera ugerageze nyuma.",
+        LanguageEnum.fr: "Code de visite verrouille. Reessayez plus tard.",
+    },
+    "M_OUTCOME": {
+        LanguageEnum.en: "Visit result:\n1. Child will return\n2. Plan agreed\n3. Needs sector help\n4. Moved away",
+        LanguageEnum.rw: "Ibyavuye mu isura:\n1. Umunyeshuri azagaruka\n2. Hashyizweho gahunda\n3. Hakenewe ubufasha bw'umurenge\n4. Yimukiye ahandi",
+        LanguageEnum.fr: "Resultat de visite:\n1. L'enfant reviendra\n2. Plan convenu\n3. Besoin aide secteur\n4. Demenage",
+    },
+    "M_BARRIER": {
+        LanguageEnum.en: "Main barrier:\n1. Fees/materials\n2. Hunger\n3. Health\n4. Distance\n5. Family\n6. Other",
+        LanguageEnum.rw: "Inzitizi nyamukuru:\n1. Amafaranga/ibikoresho\n2. Inzara\n3. Uburwayi\n4. Uburebure bw'inzira\n5. Umuryango\n6. Ikindi",
+        LanguageEnum.fr: "Obstacle principal:\n1. Frais/materiel\n2. Faim\n3. Sante\n4. Distance\n5. Famille\n6. Autre",
+    },
+    "M_COMMIT_SUCCESS": {
+        LanguageEnum.en: "Visit saved. Thank you.",
+        LanguageEnum.rw: "Isura yabitswe neza. Murakoze.",
+        LanguageEnum.fr: "Visite enregistree. Merci.",
+    },
 }
+
 
 
 def get_msg(key: str, lang: LanguageEnum = LanguageEnum.rw, **kwargs: Any) -> str:

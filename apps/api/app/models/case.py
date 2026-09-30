@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import (
     Boolean,
@@ -19,6 +19,11 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDMixin, utc_now
+
+if TYPE_CHECKING:
+    from app.models.geo import School
+    from app.models.student import Student
+    from app.models.user import User
 
 
 class CaseStatusEnum(str, Enum):
@@ -120,11 +125,15 @@ class Case(Base, UUIDMixin, TimestampMixin):
     reopened_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     events: Mapped[list["CaseEvent"]] = relationship(
-        "CaseEvent", back_populates="case", cascade="all, delete-orphan"
+        "CaseEvent", back_populates="case", cascade="all, delete-orphan", order_by="CaseEvent.created_at.desc()"
     )
     visits: Mapped[list["MentorVisit"]] = relationship(
-        "MentorVisit", back_populates="case", cascade="all, delete-orphan"
+        "MentorVisit", back_populates="case", cascade="all, delete-orphan", order_by="MentorVisit.started_at.desc()"
     )
+    student: Mapped["Student"] = relationship("Student")
+    school: Mapped["School"] = relationship("School")
+    mentor: Mapped["User | None"] = relationship("User", foreign_keys=[mentor_id])
+    sector_officer: Mapped["User | None"] = relationship("User", foreign_keys=[sector_officer_id])
 
 
 class CaseEvent(Base, UUIDMixin):
@@ -148,6 +157,7 @@ class CaseEvent(Base, UUIDMixin):
     )
 
     case: Mapped["Case"] = relationship("Case", back_populates="events")
+    actor: Mapped["User | None"] = relationship("User", foreign_keys=[actor_user_id])
 
 
 class MentorVisit(Base, UUIDMixin, TimestampMixin):
@@ -185,6 +195,7 @@ class MentorVisit(Base, UUIDMixin, TimestampMixin):
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     case: Mapped["Case"] = relationship("Case", back_populates="visits")
+    mentor: Mapped["User"] = relationship("User", foreign_keys=[mentor_id])
 
 
 class VisitCode(Base, UUIDMixin, TimestampMixin):

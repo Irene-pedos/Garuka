@@ -31,6 +31,7 @@ from app.schemas.attendance import (
     StudentAttendanceItem,
     SubmitAttendanceRequest,
 )
+from app.services.rules_engine import evaluate_student
 from app.services.sms.outbox_worker import enqueue_sms
 from app.services.ussd.calendar_helper import get_kigali_today, is_school_day
 
@@ -284,9 +285,14 @@ async def submit_class_attendance(
     )
     db.add(audit)
 
+    # 4. Trigger dropout rules evaluation
+    for sid in absent_ids_set:
+        await evaluate_student(sid, db)
+
     await db.commit()
     await db.refresh(submission)
     return submission
+
 
 
 @router.delete(

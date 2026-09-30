@@ -57,3 +57,16 @@ def create_refresh_token(data: dict[str, Any], expires_delta: timedelta | None =
 
 def decode_token(token: str) -> dict[str, Any]:
     return jwt.decode(token, settings.JWT_SECRET, algorithms=[ALGORITHM])
+
+
+def hash_visit_code(code: str, salt: str = "garuka-visit") -> str:
+    import hashlib
+
+    return hashlib.sha256(f"{salt}:{code.strip()}".encode()).hexdigest()
+
+
+def verify_visit_code(code: str, hashed: str, salt: str = "garuka-visit") -> bool:
+    import hashlib
+
+    return hashlib.sha256(f"{salt}:{code.strip()}".encode()).hexdigest() == hashed
+

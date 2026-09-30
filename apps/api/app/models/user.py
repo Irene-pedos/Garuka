@@ -1,13 +1,17 @@
 import uuid
 from datetime import datetime
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDMixin
+
+if TYPE_CHECKING:
+    from app.models.geo import District, School, Sector
 
 
 class RoleEnum(str, Enum):
@@ -68,3 +72,7 @@ class User(Base, UUIDMixin, TimestampMixin):
         index=True,
     )
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    school: Mapped["School | None"] = relationship("School")
+    sector: Mapped["Sector | None"] = relationship("Sector")
+    district: Mapped["District | None"] = relationship("District")

@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.config import settings
 from app.core.logging import hash_phone
-from app.core.security import get_pin_hash, verify_pin
+from app.core.security import get_pin_hash, hash_visit_code, verify_pin, verify_visit_code
 from app.models.attendance import (
     Absence,
     AbsenceStatusEnum,
@@ -16,9 +16,20 @@ from app.models.attendance import (
     SubmissionSourceEnum,
 )
 from app.models.base import utc_now
+from app.models.case import (
+    BarrierCodeEnum,
+    Case,
+    CaseEvent,
+    CaseStatusEnum,
+    MentorVisit,
+    VerifiedMethodEnum,
+    VisitCode,
+    VisitOutcomeEnum,
+)
 from app.models.messaging import UssdRequest, UssdSession
 from app.models.student import Class, Student, StudentStatusEnum
-from app.models.user import LanguageEnum, User
+from app.models.user import LanguageEnum, RoleEnum, User
+from app.services.rules_engine import evaluate_student
 from app.services.sms.outbox_worker import enqueue_sms
 from app.services.ussd.calendar_helper import get_available_attendance_dates, get_kigali_today
 from app.services.ussd.i18n import get_msg
@@ -236,7 +247,18 @@ async def handle_ussd_request(
             if inp_idx < n_inputs:
                 inp_idx += 1
 
-    # 6. Authenticated Staff Navigation (Teacher Flow)
+    # 6. Authenticated Staff Navigation (Mentor vs Teacher Flow)
+    if user.role == RoleEnum.mentor:
+        return await execute_mentor_flow(
+            inputs=inputs,
+            inp_idx=inp_idx,
+            n_inputs=n_inputs,
+            user=user,
+            lang=lang,
+            session_id=session_id,
+            start_time=start_time,
+            db=db,
+        )
     return await execute_teacher_flow(
         inputs=inputs,
         inp_idx=inp_idx,
@@ -247,6 +269,375 @@ async def handle_ussd_request(
         start_time=start_time,
         db=db,
     )
+
+
+async def execute_mentor_flow(
+    inputs: list[str],
+    inp_idx: int,
+    n_inputs: int,
+    user: User,
+    lang: LanguageEnum,
+    session_id: str,
+    start_time: float,
+    db: AsyncSession,
+) -> tuple[str, str]:
+    """Replays and evaluates Mentor USSD screens."""
+    # 1. Main Mentor Menu
+    if inp_idx >= n_inputs:
+        body = get_msg("M_MENU", lang)
+        rendered = render_ussd_response("CON", body)
+        await save_request_cache(db, session_id, n_inputs, "M_MENU", "CON", rendered, start_time)
+        return "CON", rendered
+
+    menu_choice = inputs[inp_idx]
+    inp_idx += 1
+
+    if menu_choice == "2":
+        return await execute_language_flow(
+            inputs=inputs,
+            inp_idx=inp_idx,
+            n_inputs=n_inputs,
+            user=user,
+            lang=lang,
+            session_id=session_id,
+            start_time=start_time,
+            db=db,
+        )
+    elif menu_choice != "1":
+        body = get_msg("S_INVALID", lang) + get_msg("M_MENU", lang)
+        rendered = render_ussd_response("CON", body)
+        await save_request_cache(db, session_id, n_inputs, "M_MENU", "CON", rendered, start_time)
+        return "CON", rendered
+
+    # 2. My Cases (M_CASES)
+    active_statuses = [
+        CaseStatusEnum.open,
+        CaseStatusEnum.mentor_assigned,
+        CaseStatusEnum.visited,
+        CaseStatusEnum.escalated_sector,
+    ]
+    cases_res = await db.execute(
+        select(Case)
+        .options(
+            selectinload(Case.student).selectinload(Student.class_group),
+            selectinload(Case.student).selectinload(Student.guardians),
+            selectinload(Case.school),
+        )
+        .where(
+            Case.mentor_id == user.id,
+            Case.status.in_(active_statuses),
+        )
+        .order_by(Case.opened_at.asc())
+    )
+    cases = cases_res.scalars().all()
+
+    if not cases:
+        body = get_msg("M_NO_CASES", lang)
+        rendered = render_ussd_response("END", body)
+        await save_request_cache(db, session_id, n_inputs, "M_CASES", "END", rendered, start_time)
+        return "END", rendered
+
+    # Display up to 4 cases
+    displayed_cases = cases[:4]
+    case_lines = []
+    for idx, c in enumerate(displayed_cases, 1):
+        st_name = c.student.full_name.split() if c.student else ["Student"]
+        short_name = f"{st_name[0]} {st_name[1][0]}." if len(st_name) > 1 else st_name[0]
+        case_lines.append(f"{idx}. {short_name} L{c.level}")
+
+    if inp_idx >= n_inputs:
+        body = get_msg("M_CASES", lang, n=len(cases), lines="\n".join(case_lines))
+        rendered = render_ussd_response("CON", body)
+        await save_request_cache(db, session_id, n_inputs, "M_CASES", "CON", rendered, start_time)
+        return "CON", rendered
+
+    case_choice = inputs[inp_idx]
+    inp_idx += 1
+
+    if case_choice == "0":
+        # Back to mentor menu
+        body = get_msg("M_MENU", lang)
+        rendered = render_ussd_response("CON", body)
+        await save_request_cache(db, session_id, n_inputs, "M_MENU", "CON", rendered, start_time)
+        return "CON", rendered
+
+    try:
+        case_idx = int(case_choice) - 1
+        if case_idx < 0 or case_idx >= len(displayed_cases):
+            raise ValueError
+        selected_case = displayed_cases[case_idx]
+    except (ValueError, IndexError):
+        body = get_msg("S_INVALID", lang) + get_msg("M_CASES", lang, n=len(cases), lines="\n".join(case_lines))
+        rendered = render_ussd_response("CON", body)
+        await save_request_cache(db, session_id, n_inputs, "M_CASES", "CON", rendered, start_time)
+        return "CON", rendered
+
+    # 3. Case Detail (M_CASE)
+    st = selected_case.student
+    today = get_kigali_today()
+    abs_res = await db.execute(
+        select(Absence).where(
+            Absence.student_id == st.id,
+            Absence.status == AbsenceStatusEnum.active,
+            Absence.date >= today - timedelta(days=14),
+        ).order_by(Absence.date.desc())
+    )
+    absences = abs_res.scalars().all()
+    abs_count = len(absences)
+    latest_reason = "none"
+    for ab in absences:
+        if ab.reason_code:
+            latest_reason = ab.reason_code.value
+            break
+
+    st_name_parts = st.full_name.split() if st else ["Student"]
+    short_st_name = f"{st_name_parts[0]} {st_name_parts[1][0]}." if len(st_name_parts) > 1 else st_name_parts[0]
+
+    if inp_idx >= n_inputs:
+        body = get_msg(
+            "M_CASE_DETAIL",
+            lang,
+            child=short_st_name,
+            class_name=st.class_group.name if st and st.class_group else "",
+            school_name=selected_case.school.name if selected_case.school else "",
+            absent_10d=abs_count,
+            reason=latest_reason,
+        )
+        rendered = render_ussd_response("CON", body)
+        await save_request_cache(db, session_id, n_inputs, "M_CASE", "CON", rendered, start_time)
+        return "CON", rendered
+
+    detail_choice = inputs[inp_idx]
+    inp_idx += 1
+
+    if detail_choice == "0":
+        # Back to cases list
+        body = get_msg("M_CASES", lang, n=len(cases), lines="\n".join(case_lines))
+        rendered = render_ussd_response("CON", body)
+        await save_request_cache(db, session_id, n_inputs, "M_CASES", "CON", rendered, start_time)
+        return "CON", rendered
+
+    if detail_choice != "1":
+        body = get_msg("S_INVALID", lang) + get_msg(
+            "M_CASE_DETAIL",
+            lang,
+            child=short_st_name,
+            class_name=st.class_group.name if st and st.class_group else "",
+            school_name=selected_case.school.name if selected_case.school else "",
+            absent_10d=abs_count,
+            reason=latest_reason,
+        )
+        rendered = render_ussd_response("CON", body)
+        await save_request_cache(db, session_id, n_inputs, "M_CASE", "CON", rendered, start_time)
+        return "CON", rendered
+
+    # 4. Start Visit & Code Prompt (M_CODE)
+    now = utc_now()
+    active_vc_res = await db.execute(
+        select(VisitCode).where(
+            VisitCode.case_id == selected_case.id,
+            VisitCode.mentor_id == user.id,
+            VisitCode.expires_at > now,
+            VisitCode.used_at.is_(None),
+        ).order_by(VisitCode.created_at.desc()).limit(1)
+    )
+    active_vc = active_vc_res.scalar_one_or_none()
+
+    # Spec approved fix: Side-effect happens only on terminal arrival of M_CODE screen
+    if inp_idx >= n_inputs:
+        if not active_vc:
+            import random
+            generated_code = f"{random.randint(1000, 9999)}"
+            code_hash = hash_visit_code(generated_code)
+            new_vc = VisitCode(
+                case_id=selected_case.id,
+                mentor_id=user.id,
+                code_hash=code_hash,
+                expires_at=now + timedelta(minutes=30),
+            )
+            db.add(new_vc)
+            await db.flush()
+
+            # Find primary guardian
+            if st and st.guardians:
+                guardian = st.guardians[0]
+                if guardian.phone_e164:
+                    code_sms = (
+                        f"Garuka visit code: {generated_code}. "
+                        f"Give it only to mentor {user.full_name.split()[0]} at your home. Valid 30 min."
+                    )
+                    await enqueue_sms(
+                        db=db,
+                        to_e164=guardian.phone_e164,
+                        template_key="parent_visit_code",
+                        params={"vcode": generated_code, "mentor": user.full_name},
+                        body=code_sms,
+                        dedupe_key=f"visit_code:{new_vc.id}",
+                        related_case_id=selected_case.id,
+                        related_student_id=st.id,
+                    )
+            await db.commit()
+
+        body = get_msg("M_CODE_PROMPT", lang)
+        rendered = render_ussd_response("CON", body)
+        await save_request_cache(db, session_id, n_inputs, "M_CODE", "CON", rendered, start_time)
+        return "CON", rendered
+
+    # Verification
+    code_input = inputs[inp_idx]
+    inp_idx += 1
+
+    verified = False
+    verified_method = VerifiedMethodEnum.unverified
+
+    if code_input == "0":
+        # Unverified visit (no code presented)
+        verified = False
+        verified_method = VerifiedMethodEnum.unverified
+    else:
+        # Check submitted code
+        if not active_vc:
+            body = get_msg("M_CODE_WRONG", lang)
+            rendered = render_ussd_response("END", body)
+            await save_request_cache(db, session_id, n_inputs, "M_CODE", "END", rendered, start_time)
+            return "END", rendered
+
+        if active_vc.attempts >= 3:
+            body = get_msg("M_CODE_LOCKED", lang)
+            rendered = render_ussd_response("END", body)
+            await save_request_cache(db, session_id, n_inputs, "M_CODE", "END", rendered, start_time)
+            return "END", rendered
+
+        if verify_visit_code(code_input, active_vc.code_hash):
+            verified = True
+            verified_method = VerifiedMethodEnum.parent_code
+            active_vc.used_at = utc_now()
+            await db.commit()
+        else:
+            active_vc.attempts += 1
+            await db.commit()
+            if active_vc.attempts >= 3:
+                body = get_msg("M_CODE_LOCKED", lang)
+            else:
+                body = get_msg("M_CODE_WRONG", lang)
+            rendered = render_ussd_response("END", body)
+            await save_request_cache(db, session_id, n_inputs, "M_CODE", "END", rendered, start_time)
+            return "END", rendered
+
+    # 5. Visit Outcome (M_OUTCOME)
+    if inp_idx >= n_inputs:
+        body = get_msg("M_OUTCOME", lang)
+        rendered = render_ussd_response("CON", body)
+        await save_request_cache(db, session_id, n_inputs, "M_OUTCOME", "CON", rendered, start_time)
+        return "CON", rendered
+
+    outcome_choice = inputs[inp_idx]
+    inp_idx += 1
+
+    outcome_map = {
+        "1": VisitOutcomeEnum.will_return,
+        "2": VisitOutcomeEnum.plan_agreed,
+        "3": VisitOutcomeEnum.needs_sector_help,
+        "4": VisitOutcomeEnum.moved_away,
+    }
+    if outcome_choice not in outcome_map:
+        body = get_msg("S_INVALID", lang) + get_msg("M_OUTCOME", lang)
+        rendered = render_ussd_response("CON", body)
+        await save_request_cache(db, session_id, n_inputs, "M_OUTCOME", "CON", rendered, start_time)
+        return "CON", rendered
+
+    selected_outcome = outcome_map[outcome_choice]
+
+    # 6. Barrier Choice (M_BARRIER) if outcome != will_return
+    selected_barrier: BarrierCodeEnum | None = None
+    if selected_outcome != VisitOutcomeEnum.will_return:
+        if inp_idx >= n_inputs:
+            body = get_msg("M_BARRIER", lang)
+            rendered = render_ussd_response("CON", body)
+            await save_request_cache(db, session_id, n_inputs, "M_BARRIER", "CON", rendered, start_time)
+            return "CON", rendered
+
+        barrier_choice = inputs[inp_idx]
+        inp_idx += 1
+        barrier_map = {
+            "1": BarrierCodeEnum.COST,
+            "2": BarrierCodeEnum.HUNGER,
+            "3": BarrierCodeEnum.HEALTH,
+            "4": BarrierCodeEnum.DISTANCE,
+            "5": BarrierCodeEnum.FAMILY,
+            "6": BarrierCodeEnum.OTHER,
+        }
+        selected_barrier = barrier_map.get(barrier_choice, BarrierCodeEnum.OTHER)
+
+    # 7. Commit Node
+    visit = MentorVisit(
+        case_id=selected_case.id,
+        mentor_id=user.id,
+        started_at=utc_now(),
+        verified=verified,
+        verified_method=verified_method,
+        outcome=selected_outcome,
+        barrier_code=selected_barrier,
+    )
+    db.add(visit)
+
+    if selected_outcome == VisitOutcomeEnum.needs_sector_help:
+        selected_case.level = 3
+        selected_case.status = CaseStatusEnum.escalated_sector
+        # Find SEO
+        if selected_case.school and selected_case.school.sector_id:
+            seo_res = await db.execute(
+                select(User).where(
+                    User.role == RoleEnum.sector_officer,
+                    User.sector_id == selected_case.school.sector_id,
+                    User.is_active.is_(True),
+                ).limit(1)
+            )
+            seo = seo_res.scalar_one_or_none()
+            if seo:
+                selected_case.sector_officer_id = seo.id
+                if seo.phone_e164:
+                    await enqueue_sms(
+                        db=db,
+                        to_e164=seo.phone_e164,
+                        template_key="seo_escalation",
+                        params={"ref": selected_case.ref, "school": selected_case.school.name},
+                        body=f"Garuka: case {selected_case.ref} escalated at {selected_case.school.name}. Open the dashboard to review.",
+                        dedupe_key=f"seo_esc:{selected_case.id}",
+                        related_case_id=selected_case.id,
+                    )
+        db.add(
+            CaseEvent(
+                case_id=selected_case.id,
+                type="escalated",
+                actor_user_id=user.id,
+                payload={"to_level": 3, "outcome": selected_outcome.value},
+            )
+        )
+    else:
+        selected_case.status = CaseStatusEnum.visited
+
+    db.add(
+        CaseEvent(
+            case_id=selected_case.id,
+            type="visit_logged",
+            actor_user_id=user.id,
+            payload={
+                "verified": verified,
+                "verified_method": verified_method.value,
+                "outcome": selected_outcome.value,
+                "barrier": selected_barrier.value if selected_barrier else None,
+            },
+        )
+    )
+
+    await db.commit()
+
+    body = get_msg("M_COMMIT_SUCCESS", lang)
+    rendered = render_ussd_response("END", body)
+    await save_request_cache(db, session_id, n_inputs, "M_COMMIT", "END", rendered, start_time)
+    return "END", rendered
+
 
 
 async def execute_teacher_flow(
@@ -680,7 +1071,11 @@ async def execute_mark_absences_flow(
                         related_student_id=student.id,
                     )
 
+            # Evaluate dropout risk rules for absent student
+            await evaluate_student(student.id, db)
+
     await db.commit()
+
 
     body = get_msg(
         "T_COMMIT_SUCCESS",

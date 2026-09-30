@@ -167,6 +167,7 @@ class Student(Base, UUIDMixin, TimestampMixin):
     enrolled_at: Mapped[date] = mapped_column(Date, nullable=False, default=date.today)
 
     class_group: Mapped["Class"] = relationship("Class", back_populates="students")
+    school: Mapped["School"] = relationship("School")
     guardians: Mapped[list["Guardian"]] = relationship(
         "Guardian",
         secondary=student_guardians,
