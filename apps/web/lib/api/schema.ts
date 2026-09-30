@@ -21,6 +21,284 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Login */
+        post: operations["auth_login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh Token Endpoint */
+        post: operations["auth_refresh"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Logout */
+        post: operations["auth_logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Me */
+        get: operations["auth_get_me"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/districts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Districts */
+        get: operations["list_districts"];
+        put?: never;
+        /** Create District */
+        post: operations["create_district"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sectors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Sectors */
+        get: operations["list_sectors"];
+        put?: never;
+        /** Create Sector */
+        post: operations["create_sector"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/schools": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Schools */
+        get: operations["list_schools"];
+        put?: never;
+        /** Create School */
+        post: operations["create_school"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/schools/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update School */
+        patch: operations["update_school"];
+        trace?: never;
+    };
+    "/api/v1/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Users */
+        get: operations["list_users"];
+        put?: never;
+        /** Create User */
+        post: operations["create_user"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{id}/reset-pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reset User Pin */
+        post: operations["reset_user_pin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update User */
+        patch: operations["update_user"];
+        trace?: never;
+    };
+    "/api/v1/schools/{school_id}/classes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List School Classes */
+        get: operations["list_school_classes"];
+        put?: never;
+        /** Create School Class */
+        post: operations["create_school_class"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/classes/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Class */
+        patch: operations["update_class"];
+        trace?: never;
+    };
+    "/api/v1/students": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Students */
+        get: operations["list_students"];
+        put?: never;
+        /** Create Student */
+        post: operations["create_student"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/students/{id}/guardians": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Student Guardian */
+        post: operations["add_student_guardian"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/students/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import Students */
+        post: operations["import_students"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/ussd/{secret}": {
         parameters: {
             query?: never;
@@ -75,6 +353,127 @@ export interface components {
              */
             text: string;
         };
+        /** Body_import_students */
+        Body_import_students: {
+            /** File */
+            file: string;
+        };
+        /** CSVImportResult */
+        CSVImportResult: {
+            /** Created */
+            created: number;
+            /** Updated */
+            updated: number;
+            /** Skipped */
+            skipped: number;
+            /** Errors */
+            errors: components["schemas"]["CSVImportRowError"][];
+        };
+        /** CSVImportRowError */
+        CSVImportRowError: {
+            /** Row */
+            row: number;
+            /** Message */
+            message: string;
+        };
+        /** ClassCreate */
+        ClassCreate: {
+            /** Name */
+            name: string;
+            /** Grade */
+            grade: number;
+            /** Academic Year */
+            academic_year: number;
+            /** Class Teacher Id */
+            class_teacher_id?: string | null;
+        };
+        /** ClassResponse */
+        ClassResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * School Id
+             * Format: uuid
+             */
+            school_id: string;
+            /** Name */
+            name: string;
+            /** Grade */
+            grade: number;
+            /** Academic Year */
+            academic_year: number;
+            /** Class Teacher Id */
+            class_teacher_id?: string | null;
+        };
+        /** ClassUpdate */
+        ClassUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Grade */
+            grade?: number | null;
+            /** Academic Year */
+            academic_year?: number | null;
+            /** Class Teacher Id */
+            class_teacher_id?: string | null;
+        };
+        /**
+         * ConsentSourceEnum
+         * @enum {string}
+         */
+        ConsentSourceEnum: "school_form" | "ussd" | "dashboard";
+        /** DistrictCreate */
+        DistrictCreate: {
+            /** Name */
+            name: string;
+        };
+        /** DistrictResponse */
+        DistrictResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+        };
+        /** GuardianCreate */
+        GuardianCreate: {
+            /** Full Name */
+            full_name: string;
+            /** Phone E164 */
+            phone_e164: string;
+            /**
+             * Relationship
+             * @default guardian
+             */
+            relationship: string | null;
+            /**
+             * Is Primary
+             * @default true
+             */
+            is_primary: boolean;
+            /** @default rw */
+            language: components["schemas"]["LanguageEnum"];
+        };
+        /** GuardianResponse */
+        GuardianResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Full Name */
+            full_name: string;
+            /** Phone Masked */
+            phone_masked: string;
+            language: components["schemas"]["LanguageEnum"];
+            consent_source?: components["schemas"]["ConsentSourceEnum"] | null;
+            /** Sms Opt Out */
+            sms_opt_out: boolean;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -88,6 +487,295 @@ export interface components {
             db: string;
             /** Version */
             version: string;
+        };
+        /**
+         * LanguageEnum
+         * @enum {string}
+         */
+        LanguageEnum: "rw" | "en" | "fr";
+        /** LoginRequest */
+        LoginRequest: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Password */
+            password: string;
+        };
+        /** RefreshTokenRequest */
+        RefreshTokenRequest: {
+            /** Refresh Token */
+            refresh_token: string;
+        };
+        /** ResetPinResponse */
+        ResetPinResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * RoleEnum
+         * @enum {string}
+         */
+        RoleEnum: "admin" | "district_director" | "sector_officer" | "head_teacher" | "teacher" | "mentor";
+        /** SchoolCreate */
+        SchoolCreate: {
+            /**
+             * Sector Id
+             * Format: uuid
+             */
+            sector_id: string;
+            /** Name */
+            name: string;
+            /** Code */
+            code?: string | null;
+            /** @default primary */
+            level: components["schemas"]["SchoolLevelEnum"];
+        };
+        /**
+         * SchoolLevelEnum
+         * @enum {string}
+         */
+        SchoolLevelEnum: "primary" | "secondary" | "both";
+        /** SchoolResponse */
+        SchoolResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Sector Id
+             * Format: uuid
+             */
+            sector_id: string;
+            /** Name */
+            name: string;
+            /** Code */
+            code?: string | null;
+            level: components["schemas"]["SchoolLevelEnum"];
+            /** Is Active */
+            is_active: boolean;
+        };
+        /** SchoolUpdate */
+        SchoolUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Code */
+            code?: string | null;
+            level?: components["schemas"]["SchoolLevelEnum"] | null;
+            /** Is Active */
+            is_active?: boolean | null;
+        };
+        /** SectorCreate */
+        SectorCreate: {
+            /**
+             * District Id
+             * Format: uuid
+             */
+            district_id: string;
+            /** Name */
+            name: string;
+        };
+        /** SectorResponse */
+        SectorResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * District Id
+             * Format: uuid
+             */
+            district_id: string;
+            /** Name */
+            name: string;
+        };
+        /**
+         * SexEnum
+         * @enum {string}
+         */
+        SexEnum: "F" | "M";
+        /** StudentCreate */
+        StudentCreate: {
+            /**
+             * School Id
+             * Format: uuid
+             */
+            school_id: string;
+            /**
+             * Class Id
+             * Format: uuid
+             */
+            class_id: string;
+            /** Roll Number */
+            roll_number: number;
+            /** Full Name */
+            full_name: string;
+            /** Student Code */
+            student_code?: string | null;
+            sex?: components["schemas"]["SexEnum"] | null;
+            /** Birth Year */
+            birth_year?: number | null;
+            /**
+             * Is Repeater
+             * @default false
+             */
+            is_repeater: boolean;
+            /** Enrolled At */
+            enrolled_at?: string | null;
+        };
+        /** StudentResponse */
+        StudentResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * School Id
+             * Format: uuid
+             */
+            school_id: string;
+            /**
+             * Class Id
+             * Format: uuid
+             */
+            class_id: string;
+            /** Class Name */
+            class_name?: string | null;
+            /** Roll Number */
+            roll_number: number;
+            /** Full Name */
+            full_name: string;
+            /** Student Code */
+            student_code?: string | null;
+            sex?: components["schemas"]["SexEnum"] | null;
+            /** Birth Year */
+            birth_year?: number | null;
+            /** Is Repeater */
+            is_repeater: boolean;
+            status: components["schemas"]["StudentStatusEnum"];
+            /**
+             * Enrolled At
+             * Format: date
+             */
+            enrolled_at: string;
+            /**
+             * Guardians
+             * @default []
+             */
+            guardians: components["schemas"]["GuardianResponse"][];
+        };
+        /**
+         * StudentStatusEnum
+         * @enum {string}
+         */
+        StudentStatusEnum: "active" | "transferred" | "dropped_out" | "graduated";
+        /** TokenResponse */
+        TokenResponse: {
+            /** Access Token */
+            access_token: string;
+            /** Refresh Token */
+            refresh_token: string;
+            /**
+             * Token Type
+             * @default bearer
+             */
+            token_type: string;
+            user: components["schemas"]["UserMeResponse"];
+        };
+        /** UserCreate */
+        UserCreate: {
+            /** Full Name */
+            full_name: string;
+            /** Email */
+            email?: string | null;
+            /** Phone E164 */
+            phone_e164?: string | null;
+            role: components["schemas"]["RoleEnum"];
+            /** Password */
+            password?: string | null;
+            /** @default rw */
+            language: components["schemas"]["LanguageEnum"];
+            /** School Id */
+            school_id?: string | null;
+            /** Sector Id */
+            sector_id?: string | null;
+            /** District Id */
+            district_id?: string | null;
+        };
+        /** UserMeResponse */
+        UserMeResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Email */
+            email?: string | null;
+            /** Full Name */
+            full_name: string;
+            role: components["schemas"]["RoleEnum"];
+            language: components["schemas"]["LanguageEnum"];
+            /** Phone Masked */
+            phone_masked?: string | null;
+            /** School Id */
+            school_id?: string | null;
+            /** Sector Id */
+            sector_id?: string | null;
+            /** District Id */
+            district_id?: string | null;
+            /** Is Active */
+            is_active: boolean;
+        };
+        /** UserResponse */
+        UserResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Full Name */
+            full_name: string;
+            /** Email */
+            email?: string | null;
+            /** Phone Masked */
+            phone_masked?: string | null;
+            role: components["schemas"]["RoleEnum"];
+            language: components["schemas"]["LanguageEnum"];
+            /** School Id */
+            school_id?: string | null;
+            /** Sector Id */
+            sector_id?: string | null;
+            /** District Id */
+            district_id?: string | null;
+            /** Is Active */
+            is_active: boolean;
+        };
+        /** UserUpdate */
+        UserUpdate: {
+            /** Full Name */
+            full_name?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Phone E164 */
+            phone_e164?: string | null;
+            language?: components["schemas"]["LanguageEnum"] | null;
+            /** Is Active */
+            is_active?: boolean | null;
+            /** School Id */
+            school_id?: string | null;
+            /** Sector Id */
+            sector_id?: string | null;
+            /** District Id */
+            district_id?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -127,6 +815,700 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+        };
+    };
+    auth_login: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    auth_refresh: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshTokenRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    auth_logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    auth_get_me: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserMeResponse"];
+                };
+            };
+        };
+    };
+    list_districts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DistrictResponse"][];
+                };
+            };
+        };
+    };
+    create_district: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DistrictCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DistrictResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sectors: {
+        parameters: {
+            query?: {
+                district_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectorResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_sector: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SectorCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SectorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_schools: {
+        parameters: {
+            query?: {
+                sector_id?: string | null;
+                q?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchoolResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_school: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SchoolCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchoolResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_school: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SchoolUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchoolResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_users: {
+        parameters: {
+            query?: {
+                role?: components["schemas"]["RoleEnum"] | null;
+                school_id?: string | null;
+                sector_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_user: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_user_pin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ResetPinResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_user: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_school_classes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                school_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_school_class: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                school_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClassCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_class: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClassUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_students: {
+        parameters: {
+            query?: {
+                school_id?: string | null;
+                class_id?: string | null;
+                q?: string | null;
+                status?: components["schemas"]["StudentStatusEnum"] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_student: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StudentCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StudentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_student_guardian: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GuardianCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuardianResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_students: {
+        parameters: {
+            query?: {
+                school_id?: string | null;
+                dry_run?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_import_students"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CSVImportResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

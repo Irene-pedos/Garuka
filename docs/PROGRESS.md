@@ -17,10 +17,20 @@
 - [x] M1.5: Build CRUD endpoints for schools, sectors, classes, and users with PIN reset.
 - [x] M1.6: Implement `POST /students/import` CSV handler with dry-run validation.
 - [x] M1.7: Write idempotent seed script (`scripts/seed.py`) with sample district, school, users.
-- [ ] M1.8: Build web dashboard login, role-based navigation sidebar, and Users/Schools management.
-- [ ] M1.9: Build Students list and CSV Import wizard with preview on dashboard.
+- [x] M1.8: Build web dashboard login, role-based navigation sidebar, and Users/Schools management.
+- [x] M1.9: Build Students list and CSV Import wizard with preview on dashboard.
+
+## Milestone M2: Teacher USSD, Attendance & SMS Outbox
+- [ ] M2.1: Implement USSD identity resolution (phone lookup for staff vs guardian vs both).
+- [ ] M2.2: Implement USSD staff PIN setup and verification flow with 3-attempt lockout.
+- [ ] M2.3: Build stateless USSD replay engine with `0` (back) and `00` (cancel) handling.
+- [ ] M2.4: Build Teacher flow screens (`T_CLASS`, `T_DATE`, `T_ROLL`, `T_CONFIRM`).
+- [ ] M2.5: Implement attendance commit transaction (submission + absence records + voiding).
+- [ ] M2.6: Implement `sms_outbox` table, `SmsProvider` interface, `ConsoleSmsProvider`, and AT provider.
+- [ ] M2.7: Build background SMS outbox worker respecting quiet hours (19:00–07:00 Kigali).
+- [ ] M2.8: Build dashboard Classes & Attendance compliance grid and manual entry fallback.
 
 ### Current State
-- **Done:** Backend M1 tasks (M1.1 through M1.7) complete and fully verified with 18 automated unit tests.
-- **In Progress:** Frontend M1 tasks (M1.8: Login, Role Navigation, Admin Users/Schools; M1.9: Students & CSV Import Wizard).
-- **Next:** Complete M1.8 and M1.9, verify frontend Turbopack build, and demonstrate dashboard functionality.
+- **Done:** Milestone M1 complete! All backend endpoints, RBAC scoping, models, migrations, tests, seed data, and frontend dashboard pages (Login, Role Nav, Students, CSV Import, Users, Schools) verified and building cleanly.
+- **In Progress:** Ready for Milestone M2 (Teacher USSD, Attendance, and SMS Outbox).
+- **Next:** M2.1 through M2.8.

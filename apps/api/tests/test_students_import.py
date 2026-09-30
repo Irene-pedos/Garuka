@@ -1,5 +1,5 @@
 import io
-
+import uuid
 import pytest
 from httpx import AsyncClient
 
@@ -14,10 +14,17 @@ async def test_csv_import_dry_run_and_commit(async_client: AsyncClient):
     school_id = login_res.json()["user"]["school_id"]
     headers = {"Authorization": f"Bearer {token}"}
 
+    rand_suffix = uuid.uuid4().hex[:4].upper()
+    c_name = f"P5 {rand_suffix}"
+    code1 = f"SDMS-{uuid.uuid4().hex[:6]}"
+    code2 = f"SDMS-{uuid.uuid4().hex[:6]}"
+    phone1 = f"+25078{uuid.uuid4().int % 10000000:07d}"
+    phone2 = f"+25078{(uuid.uuid4().int + 1) % 10000000:07d}"
+
     csv_data = (
         "student_code,full_name,sex,birth_year,class_name,roll_number,guardian_name,guardian_phone,guardian_relationship\n"
-        "SDMS-9901,Test Student One,F,2014,P5 B,1,Mama Test,+250789999001,mother\n"
-        "SDMS-9902,Test Student Two,M,2013,P5 B,2,Papa Test,+250789999002,father\n"
+        f"{code1},Test Student One,F,2014,{c_name},1,Mama Test,{phone1},mother\n"
+        f"{code2},Test Student Two,M,2013,{c_name},2,Papa Test,{phone2},father\n"
     )
 
     # 1. Dry run
