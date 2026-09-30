@@ -59,6 +59,11 @@ export default function DashboardOverviewPage() {
               </Link>
             </>
           )}
+          {["admin", "head_teacher", "teacher"].includes(user.role) && (
+            <Link href="/dashboard/attendance">
+              <Button variant="outline">Classes & Attendance</Button>
+            </Link>
+          )}
           {user.role === "admin" && (
             <Link href="/dashboard/schools">
               <Button variant="outline">Manage Schools & Sectors</Button>

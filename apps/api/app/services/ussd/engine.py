@@ -27,10 +27,17 @@ from app.models.case import (
     VisitOutcomeEnum,
 )
 from app.models.messaging import UssdRequest, UssdSession
-from app.models.student import Class, Student, StudentStatusEnum, class_teachers
+from app.models.student import (
+    Class,
+    Guardian,
+    Student,
+    StudentStatusEnum,
+    class_teachers,
+    student_guardians,
+)
 from app.models.user import LanguageEnum, RoleEnum, User
 from app.services.rules_engine import evaluate_student
-from app.services.sms.outbox_worker import enqueue_sms
+from app.services.sms.outbox_worker import enqueue_sms, process_outbox_batch
 from app.services.ussd.calendar_helper import get_available_attendance_dates, get_kigali_today
 from app.services.ussd.i18n import get_msg
 from app.services.ussd.identity import IdentityRole, resolve_identity
@@ -46,6 +53,20 @@ def validate_pin_rules(pin: str) -> bool:
     if pin in ("0000", "1234"):
         return False
     return len(set(pin)) != 1
+
+
+async def get_primary_guardian(student: Student, db: AsyncSession) -> Guardian | None:
+    """Returns primary guardian for student, or first linked guardian as fallback."""
+    if not student or not student.guardians:
+        return None
+    primary_link = await db.execute(
+        select(student_guardians.c.guardian_id).where(
+            student_guardians.c.student_id == student.id,
+            student_guardians.c.is_primary.is_(True),
+        )
+    )
+    p_id = primary_link.scalar_one_or_none()
+    return next((g for g in student.guardians if g.id == p_id), student.guardians[0])
 
 
 async def handle_ussd_request(
@@ -459,9 +480,8 @@ async def execute_mentor_flow(
             await db.flush()
 
             # Find primary guardian
-            if st and st.guardians:
-                guardian = st.guardians[0]
-                if guardian.phone_e164:
+            guardian = await get_primary_guardian(st, db) if st else None
+            if guardian and guardian.phone_e164:
                     code_sms = (
                         f"Garuka visit code: {generated_code}. "
                         f"Give it only to mentor {user.full_name.split()[0]} at your home. Valid 30 min."
@@ -761,7 +781,34 @@ async def execute_flagged_flow(
     start_time: float,
     db: AsyncSession,
 ) -> tuple[str, str]:
-    body = get_msg("T_FLAGGED", lang, lines="No flagged students currently.")
+    active_cases_res = await db.execute(
+        select(Case)
+        .options(selectinload(Case.student).selectinload(Student.class_group))
+        .where(
+            Case.school_id == user.school_id,
+            Case.status.in_([
+                CaseStatusEnum.open,
+                CaseStatusEnum.mentor_assigned,
+                CaseStatusEnum.visited,
+                CaseStatusEnum.escalated_sector,
+            ]),
+        )
+        .order_by(Case.opened_at.desc())
+        .limit(5)
+    )
+    cases = active_cases_res.scalars().all()
+    if cases:
+        lines = []
+        for c in cases:
+            st = c.student
+            st_name = st.full_name.split()[0] if st else "Student"
+            cls_name = st.class_group.name if st and st.class_group else ""
+            lines.append(f"{c.ref}: {st_name} ({cls_name})")
+        lines_str = "\n".join(lines)
+    else:
+        lines_str = "No flagged students." if lang == LanguageEnum.en else "Nta bafite ikibazo."
+
+    body = get_msg("T_FLAGGED", lang, lines=lines_str)
     rendered = render_ussd_response("END", body)
     await save_request_cache(db, session_id, n_inputs, "T_FLAGGED", "END", rendered, start_time)
     return "END", rendered
@@ -1058,6 +1105,7 @@ async def execute_mark_absences_flow(
             )
         )
         existing_abs = abs_check.scalar_one_or_none()
+        is_new_or_reactivated = False
         if not existing_abs:
             abs_record = Absence(
                 student_id=student.id,
@@ -1066,33 +1114,47 @@ async def execute_mark_absences_flow(
                 status=AbsenceStatusEnum.active,
             )
             db.add(abs_record)
+            is_new_or_reactivated = True
+        elif existing_abs.status == AbsenceStatusEnum.voided:
+            existing_abs.status = AbsenceStatusEnum.active
+            existing_abs.submission_id = submission.id
+            is_new_or_reactivated = True
 
-            # Enqueue parent SMS to primary guardian
-            if student.guardians:
-                primary_guardian = student.guardians[0]
-                if not primary_guardian.sms_opt_out:
-                    sms_body = (
-                        f"Garuka: {student.full_name.split()[0]} was marked absent at "
-                        f"{selected_class.name} on {selected_date.strftime('%d/%m')}. "
-                        f"Dial {settings.USSD_SERVICE_CODE_DISPLAY} to tell us why."
-                    )
-                    await enqueue_sms(
-                        db=db,
-                        to_e164=primary_guardian.phone_e164,
-                        template_key="parent_absence",
-                        params={"child": student.full_name, "date": str(selected_date)},
-                        body=sms_body,
-                        dedupe_key=f"absence:{student.id}:{selected_date}",
-                        related_student_id=student.id,
-                    )
+        await db.flush()
 
-            # Evaluate dropout risk rules for absent student
-            try:
-                await evaluate_student(student.id, db)
-            except Exception as e:  # noqa: BLE001
-                logger.error("Error evaluating student %s in USSD flow: %s", student.id, e)
+        # Enqueue parent SMS to primary guardian
+        guardian = await get_primary_guardian(student, db)
+        if guardian and guardian.phone_e164 and not guardian.sms_opt_out:
+            # Check if SMS already enqueued for this date
+            sms_dedupe = f"absence:{student.id}:{selected_date}"
+            sms_body = (
+                f"Garuka: {student.full_name.split()[0]} was marked absent at "
+                f"{selected_class.name} on {selected_date.strftime('%d/%m')}. "
+                f"Dial {settings.USSD_SERVICE_CODE_DISPLAY} to tell us why."
+            )
+            await enqueue_sms(
+                db=db,
+                to_e164=guardian.phone_e164,
+                template_key="parent_absence",
+                params={"child": student.full_name, "date": str(selected_date)},
+                body=sms_body,
+                dedupe_key=sms_dedupe,
+                related_student_id=student.id,
+            )
+
+        # Evaluate dropout risk rules for absent student
+        try:
+            await evaluate_student(student.id, db)
+        except Exception as e:  # noqa: BLE001
+            logger.error("Error evaluating student %s in USSD flow: %s", student.id, e)
 
     await db.commit()
+
+    # Proactively dispatch pending outbox so SMS is delivered immediately
+    try:
+        await process_outbox_batch(db)
+    except Exception as e:  # noqa: BLE001
+        logger.warning("Proactive outbox dispatch failed: %s", e)
 
     body = get_msg(
         "T_COMMIT_SUCCESS",

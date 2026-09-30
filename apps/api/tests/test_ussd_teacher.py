@@ -339,3 +339,89 @@ async def test_ussd_teacher_full_attendance_flow(db_session: AsyncSession):
     assert kind2 == kind
     assert body2 == body
 
+
+@pytest.mark.asyncio
+async def test_ussd_teacher_attendance_triggers_parent_sms(db_session: AsyncSession):
+    from app.models.messaging import SmsOutbox
+    from app.models.student import Guardian, student_guardians
+
+    schools_res = await db_session.execute(select(School).limit(1))
+    school = schools_res.scalar_one()
+
+    # Teacher setup
+    t_phone = f"+25078{uuid.uuid4().int % 10000000:07d}"
+    teacher = User(
+        email=f"teacher_sms_{uuid.uuid4().hex[:6]}@example.com",
+        phone_e164=t_phone,
+        full_name="Teacher SMS",
+        role=RoleEnum.teacher,
+        school_id=school.id,
+        pin_hash=get_pin_hash("4821"),
+        is_active=True,
+    )
+    db_session.add(teacher)
+    await db_session.flush()
+
+    cls = Class(
+        school_id=school.id,
+        name=f"P6 {uuid.uuid4().hex[:4]}",
+        grade=6,
+        academic_year=2026,
+        class_teacher_id=teacher.id,
+    )
+    db_session.add(cls)
+    await db_session.flush()
+
+    # Create student with linked primary guardian
+    g_phone = f"+25078{uuid.uuid4().int % 10000000:07d}"
+    guardian = Guardian(
+        full_name="Guardian One",
+        phone_e164=g_phone,
+        sms_opt_out=False,
+    )
+    db_session.add(guardian)
+    await db_session.flush()
+
+    student = Student(
+        school_id=school.id,
+        class_id=cls.id,
+        roll_number=1,
+        full_name="Absent Student One",
+        status=StudentStatusEnum.active,
+    )
+    db_session.add(student)
+    await db_session.flush()
+
+    await db_session.execute(
+        student_guardians.insert().values(
+            student_id=student.id,
+            guardian_id=guardian.id,
+            relationship="mother",
+            is_primary=True,
+        )
+    )
+    await db_session.commit()
+
+    # Submit attendance marking roll 1 absent via USSD
+    session_id = f"sess_sms_{uuid.uuid4()}"
+    kind, body = await handle_ussd_request(
+        session_id=session_id,
+        service_code="*384*1234#",
+        phone_number=t_phone,
+        raw_text="4821*1*1*1*0*1",
+        db=db_session,
+    )
+    assert kind == "END"
+    assert "Byabitswe" in body or "Saved" in body
+
+    # Verify SMS was created in SmsOutbox for primary guardian
+    sms_res = await db_session.execute(
+        select(SmsOutbox).where(
+            SmsOutbox.to_e164 == g_phone,
+            SmsOutbox.template_key == "parent_absence",
+        )
+    )
+    outbox_entry = sms_res.scalar_one_or_none()
+    assert outbox_entry is not None
+    assert "Absent" in outbox_entry.body or "absent" in outbox_entry.body
+

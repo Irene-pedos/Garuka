@@ -22,7 +22,7 @@ const NAV_ITEMS: NavItem[] = [
   {
     label: "Classes & Attendance",
     href: "/dashboard/attendance",
-    roles: ["admin", "head_teacher"],
+    roles: ["admin", "head_teacher", "teacher"],
   },
   {
     label: "Mentors",

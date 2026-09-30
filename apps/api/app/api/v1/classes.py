@@ -24,7 +24,10 @@ async def list_school_classes(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    if current_user.role == RoleEnum.head_teacher and current_user.school_id != school_id:
+    if (
+        current_user.role in (RoleEnum.head_teacher, RoleEnum.teacher)
+        and current_user.school_id != school_id
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cannot access classes outside your school",

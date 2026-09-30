@@ -42,8 +42,14 @@ class AfricasTalkingSmsProvider(SmsProvider):
                 recipients = res_json.get("SMSMessageData", {}).get("Recipients", [])
                 if recipients:
                     msg_id = recipients[0].get("messageId", "")
-                    logger.info("AT SMS sent to %s, messageId=%s", mask_phone(to_e164), msg_id)
-                    return msg_id
+                    recipient_status = recipients[0].get("status", "")
+                    logger.info(
+                        "AT SMS sent to %s, status=%s, messageId=%s",
+                        mask_phone(to_e164),
+                        recipient_status,
+                        msg_id,
+                    )
+                    return msg_id or "at_success_no_id"
                 return "at_success_no_id"
             except Exception as e:
                 logger.error("Failed to send AT SMS to %s: %s", mask_phone(to_e164), str(e))
