@@ -1,0 +1,55 @@
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.api.v1.health import router as health_router
+from app.api.v1.ussd_webhook import router as ussd_router
+from app.api.v1.ussd_webhook import ussd_callback
+from app.core.config import settings
+from app.core.logging import setup_logging
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    setup_logging()
+    yield
+
+
+app = FastAPI(
+    title="Garuka API",
+    description="Dropout early-warning and attendance monitoring API",
+    version="0.1.0",
+    lifespan=lifespan,
+    openapi_url="/openapi.json",
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
+
+# CORS Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins_list,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Canonical API v1 endpoints
+app.include_router(health_router, prefix="/api/v1")
+app.include_router(ussd_router, prefix="/api/v1")
+
+# Convenience root endpoints
+@app.get("/health", include_in_schema=False)
+async def root_health():
+    from app.api.v1.health import health_check
+    return await health_check()
+
+
+# Alias for Africa's Talking webhook without /api/v1
+app.add_api_route(
+    "/ussd/{secret}",
+    ussd_callback,
+    methods=["POST"],
+    include_in_schema=False,
+)
