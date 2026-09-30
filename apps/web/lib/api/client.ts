@@ -286,3 +286,105 @@ export function getComplianceCSVUrl(schoolId: string, fromDate?: string, toDate?
   return url.toString();
 }
 
+export async function fetchCases(params?: {
+  status?: string;
+  level?: number;
+  school_id?: string;
+  sector_id?: string;
+  mentor_id?: string;
+  q?: string;
+}): Promise<any[]> {
+  const url = new URL(`${API_BASE_URL}/cases`);
+  if (params?.status) url.searchParams.append("status", params.status);
+  if (params?.level) url.searchParams.append("level", String(params.level));
+  if (params?.school_id) url.searchParams.append("school_id", params.school_id);
+  if (params?.sector_id) url.searchParams.append("sector_id", params.sector_id);
+  if (params?.mentor_id) url.searchParams.append("mentor_id", params.mentor_id);
+  if (params?.q) url.searchParams.append("q", params.q);
+
+  const res = await fetch(url.toString(), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch cases");
+  return res.json();
+}
+
+export async function fetchCaseDetail(caseId: string): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/cases/${caseId}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch case details");
+  return res.json();
+}
+
+export async function assignCaseMentor(caseId: string, mentorId: string): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/cases/${caseId}/assign`, {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify({ mentor_id: mentorId }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to assign mentor");
+  }
+  return res.json();
+}
+
+export async function escalateCase(
+  caseId: string,
+  toLevel: number,
+  note?: string
+): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/cases/${caseId}/escalate`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ to_level: toLevel, note }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to escalate case");
+  }
+  return res.json();
+}
+
+export async function addCaseNote(caseId: string, text: string): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/cases/${caseId}/notes`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ text }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to add note");
+  }
+  return res.json();
+}
+
+export async function resolveCase(
+  caseId: string,
+  outcome: string,
+  note?: string
+): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/cases/${caseId}/resolve`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ outcome, note }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.detail || "Failed to resolve case");
+  }
+  return res.json();
+}
+
+export async function fetchMentors(sectorId?: string): Promise<any[]> {
+  const url = new URL(`${API_BASE_URL}/mentors`);
+  if (sectorId) url.searchParams.append("sector_id", sectorId);
+  const res = await fetch(url.toString(), {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch mentors");
+  return res.json();
+}
+
+

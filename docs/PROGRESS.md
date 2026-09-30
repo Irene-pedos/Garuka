@@ -30,15 +30,27 @@
 - [x] M2.7: Build background SMS outbox worker respecting quiet hours (19:00–07:00 Kigali).
 - [x] M2.8: Build dashboard Classes & Attendance compliance grid and manual entry fallback.
 
+## Milestone M3: Rules Engine, Cases, Mentors & Scheduler
+- [x] M3.1: Implement risk score algorithm (grade weight, repeater, overage, 30d absences, prior cases).
+- [x] M3.2: Implement least-loaded mentor assignment in student's sector (cap 15 active cases).
+- [x] M3.3: Implement trigger evaluator (3 consecutive absences, 5 in 30 days) and case event audit logging.
+- [x] M3.4: Implement Mentor USSD flow (`M_MENU`, `M_CASES` sorted by SLA, `M_CASE_DETAIL`).
+- [x] M3.5: Implement visit code generation (salted SHA-256), parent SMS dispatch, 3-attempt lock, 0=unverified.
+- [x] M3.6: Implement mentor outcome flow (`M_OUTCOME`, `M_BARRIER`) and atomic commit transaction with Level 3 escalation.
+- [x] M3.7: Implement background APScheduler running `run_nightly_rules` at 00:30 Africa/Kigali and SMS outbox dispatch.
+- [x] M3.8: Build Cases & Mentors REST endpoints (`GET /cases`, `GET /cases/{id}`, `PATCH /cases/{id}/assign`, `POST /cases/{id}/escalate`, `POST /cases/{id}/notes`, `POST /cases/{id}/resolve`, `GET /mentors`).
+- [x] M3.9: Build web dashboard Cases list with filters, Case Detail view (metrics, heatmap, visits, audit timeline, action modals), and Mentors directory.
+
 ### Current State
-- **Done:** Milestone M0, Milestone M1, and Milestone M2 complete!
-  - Teacher USSD replay engine, identity resolution, Argon2 PIN setup/auth with 3-attempt 30m lockout.
-  - Teacher attendance USSD screens: single class auto-selection, date choice, roll accumulation, `0` finish, `Bika` confirmation, and atomic commit node.
-  - `sms_outbox` with quiet hours (19:00–07:00 Kigali), transactional visit code bypass, deduplication keys, and AT SMS delivery webhook.
-  - Attendance REST API: `GET /classes/{id}/attendance`, `POST /classes/{id}/attendance` (dashboard fallback), `DELETE /absences/{id}` (voiding with audit log), and `GET /attendance/compliance` (class x day compliance grid with CSV export).
-  - Next.js Dashboard: `/dashboard/attendance` interactive compliance grid (submitted/missing/off) and manual attendance entry & voiding fallback.
-  - All 28 automated integration/unit tests passing (`uv run pytest -v`).
+- **Done:** Milestone M0, Milestone M1, Milestone M2, and Milestone M3 complete!
+  - Rules Engine: automatic case opening on 3 consecutive absences or 5 monthly absences, risk scoring (0-100), least-loaded mentor assignment.
+  - Nightly APScheduler: running at 00:30 Africa/Kigali for SLA breach escalation (Level 3 SEO after SLA school days), Level 4 district escalation (>=14 days), and 10-day return streak auto-resolution.
+  - Background SMS outbox dispatcher running every 30 seconds.
+  - Mentor USSD workflow: oldest SLA first case listing, case details, OTP visit code generation, SMS dispatch to parent, 3-attempt locking, unverified fallback, outcome and barrier recording, and atomic visit commit.
+  - Cases & Mentors REST endpoints with strict role-based access control (Head Teacher, Sector Officer, District Director, Admin).
+  - Web Dashboard: Cases directory with search and level/status filtering, Case Detail view with 4 metrics, attendance heatmap, visits list, audit timeline, and actions (assign mentor, escalate, note, resolve), and Mentors workload table.
+  - All 33 automated tests passing (`uv run pytest -v`).
   - Next.js Turbopack build verified cleanly (`npm run build`).
-- **In Progress:** Ready for Milestone M3 (Rules Engine, Cases & Mentor USSD).
-- **Next:** Milestone M3: M3.1 through M3.8.
+- **In Progress:** Milestone M3 complete, ready for Milestone M4.
+- **Next:** Milestone M4: Guardian USSD, Help Requests & SMS Follow-up.
 
