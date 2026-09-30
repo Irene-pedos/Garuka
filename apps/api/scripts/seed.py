@@ -22,7 +22,7 @@ from app.models.user import LanguageEnum, RoleEnum, User
 
 async def seed():
     async with AsyncSessionLocal() as db:
-        print("[*] Seeding Garuka database...")
+        print("[*] Seeding Garuka database (minimal test set)...")
 
         # 1. District
         dist_res = await db.execute(select(District).where(District.name == "Huye"))
@@ -44,34 +44,29 @@ async def seed():
             await db.flush()
             print("  Created Sector: Tumba")
 
-        # 3. Schools
-        schools = {}
-        for sname, scode in [("GS Demo 1", "GSD1"), ("GS Demo 2", "GSD2")]:
-            sch_res = await db.execute(
-                select(School).where(School.sector_id == sector.id, School.name == sname)
+        # 3. Only 1 School: GS Demo 1
+        sch_res = await db.execute(
+            select(School).where(School.sector_id == sector.id, School.name == "GS Demo 1")
+        )
+        school = sch_res.scalar_one_or_none()
+        if not school:
+            school = School(
+                sector_id=sector.id,
+                name="GS Demo 1",
+                code="GSD1",
+                level=SchoolLevelEnum.both,
+                is_active=True,
             )
-            sch = sch_res.scalar_one_or_none()
-            if not sch:
-                sch = School(
-                    sector_id=sector.id,
-                    name=sname,
-                    code=scode,
-                    level=SchoolLevelEnum.both,
-                    is_active=True,
-                )
-                db.add(sch)
-                await db.flush()
-                print(f"  Created School: {sname}")
-            schools[sname] = sch
+            db.add(school)
+            await db.flush()
+            print("  Created School: GS Demo 1")
 
-        school1 = schools["GS Demo 1"]
-
-        # 4. Users
+        # 4. Users: Exactly 1 user per role
         default_pwd = get_password_hash("ChangeMe123!")
         default_pin = get_pin_hash("4821")
 
         users_data = [
-            # (full_name, email, phone_e164, role, pwd, pin, school_id, sector_id, district_id)
+            # 1 Admin
             (
                 "Admin User",
                 "admin@garuka.rw",
@@ -83,6 +78,7 @@ async def seed():
                 None,
                 None,
             ),
+            # 1 District Director
             (
                 "District Director",
                 "director@huye.gov.rw",
@@ -94,6 +90,7 @@ async def seed():
                 None,
                 district.id,
             ),
+            # 1 Sector Officer
             (
                 "Sector Officer",
                 "seo@tumba.gov.rw",
@@ -105,7 +102,7 @@ async def seed():
                 sector.id,
                 None,
             ),
-            # Head Teacher — MTN Rwanda +250788xxxxxx
+            # 1 Head Teacher
             (
                 "Head Teacher",
                 "head@gsdemo1.rw",
@@ -113,11 +110,11 @@ async def seed():
                 RoleEnum.head_teacher,
                 default_pwd,
                 default_pin,
-                school1.id,
+                school.id,
                 None,
                 None,
             ),
-            # Teacher Uwimana — Airtel Rwanda +250736xxxxxx
+            # 1 Teacher
             (
                 "Teacher Uwimana",
                 "teacher1@gsdemo1.rw",
@@ -125,39 +122,15 @@ async def seed():
                 RoleEnum.teacher,
                 default_pwd,
                 default_pin,
-                school1.id,
+                school.id,
                 None,
                 None,
             ),
-            # Teacher Mugisha — MTN Rwanda +250788xxxxxx
-            (
-                "Teacher Mugisha",
-                "teacher2@gsdemo1.rw",
-                "+250788200002",
-                RoleEnum.teacher,
-                default_pwd,
-                default_pin,
-                school1.id,
-                None,
-                None,
-            ),
-            # Mentor Keza — Airtel Rwanda +250736xxxxxx
+            # 1 Mentor
             (
                 "Mentor Keza",
                 None,
                 "+250736300001",
-                RoleEnum.mentor,
-                None,
-                default_pin,
-                None,
-                sector.id,
-                None,
-            ),
-            # Mentor Gasana — MTN Rwanda +250788xxxxxx
-            (
-                "Mentor Gasana",
-                None,
-                "+250788300002",
                 RoleEnum.mentor,
                 None,
                 default_pin,
@@ -193,169 +166,99 @@ async def seed():
                 )
                 db.add(u)
                 await db.flush()
-                seeded_users[name] = u
-                print(f"  Created User: {name} ({role.value})")
+                seeded_users[role] = u
+                print(f"  Created User ({role.value}): {name}")
             else:
-                seeded_users[name] = existing
+                seeded_users[role] = existing
 
-        # 5. Classes for GS Demo 1
-        t1 = seeded_users.get("Teacher Uwimana")
-        t2 = seeded_users.get("Teacher Mugisha")
+        teacher = seeded_users[RoleEnum.teacher]
 
-        classes = {}
-        for cname, grade, teacher in [("P5 A", 5, t1), ("P6 A", 6, t2)]:
-            c_res = await db.execute(
-                select(Class).where(
-                    Class.school_id == school1.id,
-                    Class.name == cname,
-                    Class.academic_year == 2026,
-                )
+        # 5. Only 1 Class: P5 A
+        c_res = await db.execute(
+            select(Class).where(
+                Class.school_id == school.id,
+                Class.name == "P5 A",
+                Class.academic_year == 2026,
             )
-            c = c_res.scalar_one_or_none()
-            if not c:
-                c = Class(
-                    school_id=school1.id,
-                    name=cname,
-                    grade=grade,
-                    academic_year=2026,
-                    class_teacher_id=teacher.id if teacher else None,
-                )
-                db.add(c)
-                await db.flush()
-                # Link class_teachers
-                if teacher:
-                    await db.execute(
-                        class_teachers.insert().values(class_id=c.id, user_id=teacher.id)
-                    )
-                print(f"  Created Class: {cname}")
-            classes[cname] = c
+        )
+        class_p5a = c_res.scalar_one_or_none()
+        if not class_p5a:
+            class_p5a = Class(
+                school_id=school.id,
+                name="P5 A",
+                grade=5,
+                academic_year=2026,
+                class_teacher_id=teacher.id,
+            )
+            db.add(class_p5a)
+            await db.flush()
+            await db.execute(
+                class_teachers.insert().values(class_id=class_p5a.id, user_id=teacher.id)
+            )
+            print("  Created Class: P5 A")
 
-        class_p5a = classes["P5 A"]
-
-        # 6. Students & Guardians (30 students)
-        # 20 guardians with realistic Rwandan names and phone numbers
-        guardian_data = [
-            ("Uwimana Claudine",  "+250788401001", "rw"),  # Mother  1
-            ("Habimana Jean",     "+250736401002", "rw"),  # Father  2
-            ("Mukamana Dancille", "+250788401003", "rw"),  # Mother  3
-            ("Nshimiyimana Eric", "+250736401004", "rw"),  # Father  4
-            ("Umubyeyi Berthe",   "+250788401005", "rw"),  # Mother  5
-            ("Nsengimana Pascal", "+250736401006", "rw"),  # Father  6
-            ("Mukabaranga Alice", "+250788401007", "rw"),  # Mother  7
-            ("Hakizimana Didier", "+250736401008", "rw"),  # Father  8
-            ("Ingabire Vestine",  "+250788401009", "rw"),  # Mother  9
-            ("Niyonzima Charles", "+250736401010", "rw"),  # Father 10
-            ("Mukagasana Felixa", "+250788401011", "rw"),  # Mother 11
-            ("Bizimungu Albert",  "+250736401012", "rw"),  # Father 12
-            ("Uwera Scholastique","+250788401013", "rw"),  # Mother 13
-            ("Nkurunziza Felix",  "+250736401014", "rw"),  # Father 14
-            ("Mukagasana Rose",   "+250788401015", "rw"),  # Mother 15
-            ("Habimana Emmanuel", "+250736401016", "rw"),  # Father 16
-            ("Uwimana Jeannette", "+250788401017", "rw"),  # Mother 17
-            ("Nzabonimana Simon", "+250736401018", "rw"),  # Father 18
-            ("Mukamurigo Claire", "+250788401019", "rw"),  # Mother 19
-            ("Ntaganira Gilbert", "+250736401020", "rw"),  # Father 20
+        # 6. Exactly 5 Students & 5 Guardians
+        students_data = [
+            ("Uwase Jeanne", 1, SexEnum.F, "Uwimana Claudine", "+250788401001", "mother"),
+            ("Kamana Eric", 2, SexEnum.M, "Habimana Jean", "+250736401002", "father"),
+            ("Mugabo Fabrice", 3, SexEnum.M, "Mukamana Dancille", "+250788401003", "mother"),
+            ("Keza Aline", 4, SexEnum.F, "Nshimiyimana Eric", "+250736401004", "father"),
+            ("Habimana Patrick", 5, SexEnum.M, "Umubyeyi Berthe", "+250788401005", "mother"),
         ]
 
-        guardians = []
-        for full_name, g_phone, lang in guardian_data:
+        for s_name, roll, sex, g_name, g_phone, rel in students_data:
             g_res = await db.execute(select(Guardian).where(Guardian.phone_e164 == g_phone))
-            g = g_res.scalar_one_or_none()
-            if not g:
-                g = Guardian(
-                    full_name=full_name,
+            guardian = g_res.scalar_one_or_none()
+            if not guardian:
+                guardian = Guardian(
+                    full_name=g_name,
                     phone_e164=g_phone,
                     language=LanguageEnum.rw,
                     consent_source=ConsentSourceEnum.school_form,
                     sms_opt_out=False,
                 )
-                db.add(g)
+                db.add(guardian)
                 await db.flush()
-            guardians.append(g)
 
-        first_names = [
-            "Uwase",
-            "Kamana",
-            "Mugabo",
-            "Keza",
-            "Habimana",
-            "Tuyishime",
-            "Kagabo",
-            "Ineza",
-            "Hirwa",
-            "Manzi",
-        ]
-        last_names = [
-            "Jeanne",
-            "Eric",
-            "Fabrice",
-            "Aline",
-            "Patrick",
-            "Grace",
-            "David",
-            "Chantal",
-            "Jean",
-            "Marie",
-        ]
-
-        for roll in range(1, 31):
-            s_res = await db.execute(
-                select(Student).where(Student.class_id == class_p5a.id, Student.roll_number == roll)
+            st_res = await db.execute(
+                select(Student).where(
+                    Student.class_id == class_p5a.id, Student.roll_number == roll
+                )
             )
-            s = s_res.scalar_one_or_none()
-            if not s:
-                fname = f"{first_names[(roll - 1) % len(first_names)]} {last_names[(roll - 1) % len(last_names)]}"
-                s = Student(
-                    school_id=school1.id,
+            student = st_res.scalar_one_or_none()
+            if not student:
+                student = Student(
+                    school_id=school.id,
                     class_id=class_p5a.id,
                     roll_number=roll,
-                    full_name=fname,
-                    student_code=f"SDMS-{2026000 + roll}",
-                    sex=SexEnum.F if roll % 2 == 0 else SexEnum.M,
+                    full_name=s_name,
+                    student_code=f"SDMS-2026{roll:03d}",
+                    sex=sex,
                     birth_year=2014,
                     status=StudentStatusEnum.active,
                     enrolled_at=date(2026, 1, 5),
                 )
-                db.add(s)
+                db.add(student)
                 await db.flush()
 
-                # Assign guardian (guardians 1..10 share 2 kids)
-                g_idx = (roll - 1) % len(guardians)
-                assigned_guardian = guardians[g_idx]
                 await db.execute(
                     student_guardians.insert().values(
-                        student_id=s.id,
-                        guardian_id=assigned_guardian.id,
-                        relationship="mother" if roll % 2 == 0 else "father",
+                        student_id=student.id,
+                        guardian_id=guardian.id,
+                        relationship=rel,
                         is_primary=True,
                     )
                 )
 
-        print("  Created 30 students and linked guardians in P5 A")
+        print("  Created 5 students and 5 linked guardians in P5 A")
 
         # 7. Terms & Holidays
         t_res = await db.execute(select(Term).where(Term.academic_year == 2026, Term.term_no == 1))
         if not t_res.scalar_one_or_none():
-            t1 = Term(
-                academic_year=2026,
-                term_no=1,
-                start_date=date(2026, 1, 5),
-                end_date=date(2026, 4, 3),
-            )
-            t2 = Term(
-                academic_year=2026,
-                term_no=2,
-                start_date=date(2026, 4, 20),
-                end_date=date(2026, 7, 10),
-            )
-            t3 = Term(
-                academic_year=2026,
-                term_no=3,
-                start_date=date(2026, 8, 3),
-                end_date=date(2026, 11, 6),
-            )
+            t1 = Term(academic_year=2026, term_no=1, start_date=date(2026, 1, 5), end_date=date(2026, 4, 3))
+            t2 = Term(academic_year=2026, term_no=2, start_date=date(2026, 4, 20), end_date=date(2026, 7, 10))
+            t3 = Term(academic_year=2026, term_no=3, start_date=date(2026, 8, 3), end_date=date(2026, 11, 6))
             db.add_all([t1, t2, t3])
-            print("  Created 2026 Terms (T1, T2, T3)")
 
         h_res = await db.execute(select(Holiday).where(Holiday.date == date(2026, 2, 1)))
         if not h_res.scalar_one_or_none():
@@ -364,7 +267,6 @@ async def seed():
             h3 = Holiday(date=date(2026, 7, 1), name="Independence Day")
             h4 = Holiday(date=date(2026, 7, 4), name="Liberation Day")
             db.add_all([h1, h2, h3, h4])
-            print("  Created Holidays")
 
         await db.commit()
         print("[OK] Seeding completed successfully!")

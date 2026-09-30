@@ -1,3 +1,4 @@
+import uuid
 from unittest.mock import patch
 
 import pytest
@@ -9,9 +10,9 @@ from app.core.config import settings
 @pytest.mark.asyncio
 async def test_ussd_valid_request(async_client: AsyncClient):
     payload = {
-        "sessionId": "ATUid_test_session_1",
+        "sessionId": f"ATUid_test_{uuid.uuid4().hex[:8]}",
         "serviceCode": "*384*1234#",
-        "phoneNumber": "+250780000001",
+        "phoneNumber": "+250736200001",
         "networkCode": "99999",
         "text": "",
     }
@@ -29,7 +30,7 @@ async def test_ussd_invalid_secret_returns_200_end(async_client: AsyncClient):
     payload = {
         "sessionId": "ATUid_bad_secret",
         "serviceCode": "*384*1234#",
-        "phoneNumber": "+250780000001",
+        "phoneNumber": "+250736200001",
         "networkCode": "99999",
         "text": "",
     }
@@ -47,7 +48,7 @@ async def test_ussd_exception_trapped_as_200_service_unavailable(async_client: A
     payload = {
         "sessionId": "ATUid_crash_test",
         "serviceCode": "*384*1234#",
-        "phoneNumber": "+250780000001",
+        "phoneNumber": "+250736200001",
         "networkCode": "99999",
         "text": "",
     }

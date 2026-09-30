@@ -113,7 +113,7 @@ async def test_get_attendance_compliance_grid(
     data = resp.json()
     assert data["school_id"] == str(p5_class.school_id)
     assert "compliance_pct" in data
-    assert len(data["classes"]) >= 2
+    assert len(data["classes"]) >= 1
     assert len(data["classes"][0]["days"]) > 0
 
     # Test CSV export
