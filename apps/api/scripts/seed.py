@@ -1,7 +1,7 @@
 import asyncio
 from datetime import date
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from app.core.security import get_password_hash, get_pin_hash
 from app.db.session import AsyncSessionLocal
@@ -20,257 +20,236 @@ from app.models.student import (
 from app.models.user import LanguageEnum, RoleEnum, User
 
 
-async def seed():
+async def reset_and_seed():
     async with AsyncSessionLocal() as db:
-        print("[*] Seeding Garuka database (minimal test set)...")
+        print("[*] Resetting and cleaning Garuka database...")
+
+        # 0. Truncate all tables cleanly with CASCADE
+        tables_to_truncate = [
+            "ussd_requests",
+            "ussd_sessions",
+            "sms_outbox",
+            "audit_logs",
+            "help_requests",
+            "mentor_visits",
+            "visit_codes",
+            "case_events",
+            "cases",
+            "absences",
+            "attendance_submissions",
+            "student_guardians",
+            "students",
+            "class_teachers",
+            "classes",
+            "users",
+            "guardians",
+            "schools",
+            "sectors",
+            "districts",
+            "holidays",
+            "terms",
+            "app_settings",
+        ]
+        await db.execute(text(f"TRUNCATE TABLE {', '.join(tables_to_truncate)} RESTART IDENTITY CASCADE;"))
+        await db.commit()
+        print("[*] All tables cleared successfully.")
+
+        print("[*] Inserting minimal, clean test dataset...")
 
         # 1. District
-        dist_res = await db.execute(select(District).where(District.name == "Huye"))
-        district = dist_res.scalar_one_or_none()
-        if not district:
-            district = District(name="Huye")
-            db.add(district)
-            await db.flush()
-            print("  Created District: Huye")
+        district = District(name="Huye")
+        db.add(district)
+        await db.flush()
+        print("  Created District: Huye")
 
         # 2. Sector
-        sec_res = await db.execute(
-            select(Sector).where(Sector.district_id == district.id, Sector.name == "Tumba")
-        )
-        sector = sec_res.scalar_one_or_none()
-        if not sector:
-            sector = Sector(district_id=district.id, name="Tumba")
-            db.add(sector)
-            await db.flush()
-            print("  Created Sector: Tumba")
+        sector = Sector(district_id=district.id, name="Tumba")
+        db.add(sector)
+        await db.flush()
+        print("  Created Sector: Tumba")
 
-        # 3. Only 1 School: GS Demo 1
-        sch_res = await db.execute(
-            select(School).where(School.sector_id == sector.id, School.name == "GS Demo 1")
+        # 3. Exactly 1 School: GS Demo 1
+        school = School(
+            sector_id=sector.id,
+            name="GS Demo 1",
+            code="GSD1",
+            level=SchoolLevelEnum.both,
+            is_active=True,
         )
-        school = sch_res.scalar_one_or_none()
-        if not school:
-            school = School(
-                sector_id=sector.id,
-                name="GS Demo 1",
-                code="GSD1",
-                level=SchoolLevelEnum.both,
-                is_active=True,
-            )
-            db.add(school)
-            await db.flush()
-            print("  Created School: GS Demo 1")
+        db.add(school)
+        await db.flush()
+        print("  Created School: GS Demo 1")
 
-        # 4. Users: Exactly 1 user per role
+        # 4. Users: 1 Admin, 1 Sector Officer, 1 Head Teacher, 1 Teacher, 1 Mentor
         default_pwd = get_password_hash("ChangeMe123!")
         default_pin = get_pin_hash("4821")
 
-        users_data = [
-            # 1 Admin
-            (
-                "Admin User",
-                "admin@garuka.rw",
-                None,
-                RoleEnum.admin,
-                default_pwd,
-                None,
-                None,
-                None,
-                None,
-            ),
-            # 1 District Director
-            (
-                "District Director",
-                "director@huye.gov.rw",
-                None,
-                RoleEnum.district_director,
-                default_pwd,
-                None,
-                None,
-                None,
-                district.id,
-            ),
-            # 1 Sector Officer
-            (
-                "Sector Officer",
-                "seo@tumba.gov.rw",
-                None,
-                RoleEnum.sector_officer,
-                default_pwd,
-                None,
-                None,
-                sector.id,
-                None,
-            ),
-            # 1 Head Teacher
-            (
-                "Head Teacher",
-                "head@gsdemo1.rw",
-                "+250788100001",
-                RoleEnum.head_teacher,
-                default_pwd,
-                default_pin,
-                school.id,
-                None,
-                None,
-            ),
-            # 1 Teacher
-            (
-                "Teacher Uwimana",
-                "teacher1@gsdemo1.rw",
-                "+250736200001",
-                RoleEnum.teacher,
-                default_pwd,
-                default_pin,
-                school.id,
-                None,
-                None,
-            ),
-            # 1 Mentor
-            (
-                "Mentor Keza",
-                None,
-                "+250736300001",
-                RoleEnum.mentor,
-                None,
-                default_pin,
-                None,
-                sector.id,
-                None,
-            ),
-        ]
-
-        seeded_users = {}
-        for name, email, phone, role, pwd, pin, sch_id, sec_id, dist_id in users_data:
-            existing = None
-            if email:
-                res = await db.execute(select(User).where(User.email == email))
-                existing = res.scalar_one_or_none()
-            elif phone:
-                res = await db.execute(select(User).where(User.phone_e164 == phone))
-                existing = res.scalar_one_or_none()
-
-            if not existing:
-                u = User(
-                    full_name=name,
-                    email=email,
-                    phone_e164=phone,
-                    role=role,
-                    password_hash=pwd,
-                    pin_hash=pin,
-                    language=LanguageEnum.rw,
-                    school_id=sch_id,
-                    sector_id=sec_id,
-                    district_id=dist_id,
-                    is_active=True,
-                )
-                db.add(u)
-                await db.flush()
-                seeded_users[role] = u
-                print(f"  Created User ({role.value}): {name}")
-            else:
-                seeded_users[role] = existing
-
-        teacher = seeded_users[RoleEnum.teacher]
-
-        # 5. Only 1 Class: P5 A
-        c_res = await db.execute(
-            select(Class).where(
-                Class.school_id == school.id,
-                Class.name == "P5 A",
-                Class.academic_year == 2026,
-            )
+        # Admin
+        admin = User(
+            full_name="Admin User",
+            email="admin@garuka.rw",
+            phone_e164=None,
+            role=RoleEnum.admin,
+            password_hash=default_pwd,
+            pin_hash=None,
+            language=LanguageEnum.en,
+            is_active=True,
         )
-        class_p5a = c_res.scalar_one_or_none()
-        if not class_p5a:
-            class_p5a = Class(
-                school_id=school.id,
-                name="P5 A",
-                grade=5,
-                academic_year=2026,
-                class_teacher_id=teacher.id,
-            )
-            db.add(class_p5a)
-            await db.flush()
-            await db.execute(
-                class_teachers.insert().values(class_id=class_p5a.id, user_id=teacher.id)
-            )
-            print("  Created Class: P5 A")
+        db.add(admin)
 
-        # 6. Exactly 5 Students & 5 Guardians
-        students_data = [
-            ("Uwase Jeanne", 1, SexEnum.F, "Uwimana Claudine", "+250788401001", "mother"),
-            ("Kamana Eric", 2, SexEnum.M, "Habimana Jean", "+250736401002", "father"),
-            ("Mugabo Fabrice", 3, SexEnum.M, "Mukamana Dancille", "+250788401003", "mother"),
-            ("Keza Aline", 4, SexEnum.F, "Nshimiyimana Eric", "+250736401004", "father"),
-            ("Habimana Patrick", 5, SexEnum.M, "Umubyeyi Berthe", "+250788401005", "mother"),
-        ]
+        # Sector Officer
+        seo = User(
+            full_name="Sector Officer",
+            email="seo@tumba.gov.rw",
+            phone_e164=None,
+            role=RoleEnum.sector_officer,
+            password_hash=default_pwd,
+            pin_hash=None,
+            language=LanguageEnum.rw,
+            sector_id=sector.id,
+            is_active=True,
+        )
+        db.add(seo)
 
-        for s_name, roll, sex, g_name, g_phone, rel in students_data:
-            g_res = await db.execute(select(Guardian).where(Guardian.phone_e164 == g_phone))
-            guardian = g_res.scalar_one_or_none()
-            if not guardian:
-                guardian = Guardian(
-                    full_name=g_name,
-                    phone_e164=g_phone,
-                    language=LanguageEnum.rw,
-                    consent_source=ConsentSourceEnum.school_form,
-                    sms_opt_out=False,
-                )
-                db.add(guardian)
-                await db.flush()
+        # Head Teacher
+        head_teacher = User(
+            full_name="Head Teacher",
+            email="head@gsdemo1.rw",
+            phone_e164="+250788100001",
+            role=RoleEnum.head_teacher,
+            password_hash=default_pwd,
+            pin_hash=default_pin,
+            language=LanguageEnum.rw,
+            school_id=school.id,
+            is_active=True,
+        )
+        db.add(head_teacher)
 
-            st_res = await db.execute(
-                select(Student).where(
-                    Student.class_id == class_p5a.id, Student.roll_number == roll
-                )
-            )
-            student = st_res.scalar_one_or_none()
-            if not student:
-                student = Student(
-                    school_id=school.id,
-                    class_id=class_p5a.id,
-                    roll_number=roll,
-                    full_name=s_name,
-                    student_code=f"SDMS-2026{roll:03d}",
-                    sex=sex,
-                    birth_year=2014,
-                    status=StudentStatusEnum.active,
-                    enrolled_at=date(2026, 1, 5),
-                )
-                db.add(student)
-                await db.flush()
+        # Teacher
+        teacher = User(
+            full_name="Teacher Uwimana",
+            email="teacher1@gsdemo1.rw",
+            phone_e164="+250736200001",
+            role=RoleEnum.teacher,
+            password_hash=default_pwd,
+            pin_hash=default_pin,
+            language=LanguageEnum.rw,
+            school_id=school.id,
+            is_active=True,
+        )
+        db.add(teacher)
 
-                await db.execute(
-                    student_guardians.insert().values(
-                        student_id=student.id,
-                        guardian_id=guardian.id,
-                        relationship=rel,
-                        is_primary=True,
-                    )
-                )
+        # Mentor
+        mentor = User(
+            full_name="Mentor Keza",
+            email=None,
+            phone_e164="+250736300001",
+            role=RoleEnum.mentor,
+            password_hash=None,
+            pin_hash=default_pin,
+            language=LanguageEnum.rw,
+            sector_id=sector.id,
+            is_active=True,
+        )
+        db.add(mentor)
+        await db.flush()
+        print("  Created 5 Users: Admin, Sector Officer, Head Teacher, Teacher, Mentor")
 
-        print("  Created 5 students and 5 linked guardians in P5 A")
+        # 5. Exactly 1 Class: P5 A
+        class_p5a = Class(
+            school_id=school.id,
+            name="P5 A",
+            grade=5,
+            academic_year=2026,
+            class_teacher_id=teacher.id,
+        )
+        db.add(class_p5a)
+        await db.flush()
 
-        # 7. Terms & Holidays
-        t_res = await db.execute(select(Term).where(Term.academic_year == 2026, Term.term_no == 1))
-        if not t_res.scalar_one_or_none():
-            t1 = Term(academic_year=2026, term_no=1, start_date=date(2026, 1, 5), end_date=date(2026, 4, 3))
-            t2 = Term(academic_year=2026, term_no=2, start_date=date(2026, 4, 20), end_date=date(2026, 7, 10))
-            t3 = Term(academic_year=2026, term_no=3, start_date=date(2026, 8, 3), end_date=date(2026, 11, 6))
-            db.add_all([t1, t2, t3])
+        await db.execute(
+            class_teachers.insert().values(class_id=class_p5a.id, user_id=teacher.id)
+        )
+        print("  Created 1 Class: P5 A (assigned to Teacher Uwimana)")
 
-        h_res = await db.execute(select(Holiday).where(Holiday.date == date(2026, 2, 1)))
-        if not h_res.scalar_one_or_none():
-            h1 = Holiday(date=date(2026, 2, 1), name="National Heroes Day")
-            h2 = Holiday(date=date(2026, 4, 7), name="Genocide Memorial Day")
-            h3 = Holiday(date=date(2026, 7, 1), name="Independence Day")
-            h4 = Holiday(date=date(2026, 7, 4), name="Liberation Day")
-            db.add_all([h1, h2, h3, h4])
+        # 6. Exactly 2 Guardians & 2 Students in P5 A
+        # Guardian 1 & Student 1
+        g1 = Guardian(
+            full_name="Uwimana Claudine",
+            phone_e164="+250788401001",
+            language=LanguageEnum.rw,
+            consent_source=ConsentSourceEnum.school_form,
+            sms_opt_out=False,
+        )
+        # Guardian 2 & Student 2
+        g2 = Guardian(
+            full_name="Habimana Jean",
+            phone_e164="+250736401002",
+            language=LanguageEnum.rw,
+            consent_source=ConsentSourceEnum.school_form,
+            sms_opt_out=False,
+        )
+        db.add_all([g1, g2])
+        await db.flush()
+
+        s1 = Student(
+            school_id=school.id,
+            class_id=class_p5a.id,
+            roll_number=1,
+            full_name="Uwase Jeanne",
+            student_code="SDMS-2026001",
+            sex=SexEnum.F,
+            birth_year=2014,
+            status=StudentStatusEnum.active,
+            enrolled_at=date(2026, 1, 5),
+        )
+        s2 = Student(
+            school_id=school.id,
+            class_id=class_p5a.id,
+            roll_number=2,
+            full_name="Kamana Eric",
+            student_code="SDMS-2026002",
+            sex=SexEnum.M,
+            birth_year=2014,
+            status=StudentStatusEnum.active,
+            enrolled_at=date(2026, 1, 5),
+        )
+        db.add_all([s1, s2])
+        await db.flush()
+
+        # Link students to guardians
+        await db.execute(
+            student_guardians.insert().values([
+                {
+                    "student_id": s1.id,
+                    "guardian_id": g1.id,
+                    "relationship": "mother",
+                    "is_primary": True,
+                },
+                {
+                    "student_id": s2.id,
+                    "guardian_id": g2.id,
+                    "relationship": "father",
+                    "is_primary": True,
+                },
+            ])
+        )
+        print("  Created 2 Guardians and 2 Students (Uwase Jeanne, Kamana Eric) in P5 A")
+
+        # 7. Terms & Holidays (2026 calendar for attendance calculations)
+        t1 = Term(academic_year=2026, term_no=1, start_date=date(2026, 1, 5), end_date=date(2026, 4, 3))
+        t2 = Term(academic_year=2026, term_no=2, start_date=date(2026, 4, 20), end_date=date(2026, 7, 10))
+        t3 = Term(academic_year=2026, term_no=3, start_date=date(2026, 8, 3), end_date=date(2026, 11, 6))
+        db.add_all([t1, t2, t3])
+
+        h1 = Holiday(date=date(2026, 2, 1), name="National Heroes Day")
+        h2 = Holiday(date=date(2026, 4, 7), name="Genocide Memorial Day")
+        h3 = Holiday(date=date(2026, 7, 1), name="Independence Day")
+        h4 = Holiday(date=date(2026, 7, 4), name="Liberation Day")
+        db.add_all([h1, h2, h3, h4])
 
         await db.commit()
-        print("[OK] Seeding completed successfully!")
+        print("[OK] Database successfully reset and seeded!")
 
 
 if __name__ == "__main__":
-    asyncio.run(seed())
+    asyncio.run(reset_and_seed())

@@ -25,7 +25,7 @@ async def test_admin_full_access(async_client: AsyncClient):
 
     schools_res = await async_client.get("/api/v1/schools", headers=headers)
     assert schools_res.status_code == 200
-    assert len(schools_res.json()) >= 2
+    assert len(schools_res.json()) >= 1
 
 
 @pytest.mark.asyncio
