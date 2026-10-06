@@ -121,6 +121,7 @@ async def compute_attendance_trend(
 
 @router.get("/overview", response_model=AnalyticsOverviewResponse, operation_id="get_analytics_overview")
 async def get_analytics_overview(
+    days: int = 90,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(
         require_roles(
@@ -382,12 +383,12 @@ async def get_analytics_overview(
                 )
     classes_missing_today_count = len(classes_missing_today_list)
 
-    # 6. Daily Attendance Trends (90 days)
+    # 6. Daily Attendance Trends
     attendance_trend = await compute_attendance_trend(
         db=db,
         current_user=current_user,
         scoped_class_ids=[c.id for c in classes],
-        days=90,
+        days=days,
     )
 
     return AnalyticsOverviewResponse(

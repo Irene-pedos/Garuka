@@ -5,6 +5,16 @@ from pydantic import BaseModel, EmailStr
 from app.models.user import LanguageEnum, RoleEnum
 
 
+class UserAssignedClassResponse(BaseModel):
+    id: uuid.UUID
+    name: str
+    grade: int
+    academic_year: int | None = None
+
+    class Config:
+        from_attributes = True
+
+
 class UserCreate(BaseModel):
     full_name: str
     email: EmailStr | None = None
@@ -15,6 +25,7 @@ class UserCreate(BaseModel):
     school_id: uuid.UUID | None = None
     sector_id: uuid.UUID | None = None
     district_id: uuid.UUID | None = None
+    class_ids: list[uuid.UUID] | None = None
 
 
 class UserUpdate(BaseModel):
@@ -26,6 +37,7 @@ class UserUpdate(BaseModel):
     school_id: uuid.UUID | None = None
     sector_id: uuid.UUID | None = None
     district_id: uuid.UUID | None = None
+    class_ids: list[uuid.UUID] | None = None
 
 
 class UserResponse(BaseModel):
@@ -39,6 +51,7 @@ class UserResponse(BaseModel):
     sector_id: uuid.UUID | None = None
     district_id: uuid.UUID | None = None
     is_active: bool
+    assigned_classes: list[UserAssignedClassResponse] = []
 
     class Config:
         from_attributes = True

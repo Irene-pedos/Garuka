@@ -272,11 +272,31 @@ export async function fetchSectors(districtId?: string, signal?: AbortSignal): P
   return apiFetch(`/sectors${query}`, { signal });
 }
 
-export async function fetchUsers(role?: string, signal?: AbortSignal): Promise<
-  paths["/api/v1/users"]["get"]["responses"]["200"]["content"]["application/json"]
-> {
+export interface UserAssignedClass {
+  id: string;
+  name: string;
+  grade: number;
+  academic_year?: number | null;
+}
+
+export interface UserItem {
+  id: string;
+  full_name: string;
+  email?: string | null;
+  phone_masked?: string | null;
+  phone_e164?: string | null;
+  role: string;
+  language: string;
+  school_id?: string | null;
+  sector_id?: string | null;
+  district_id?: string | null;
+  is_active: boolean;
+  assigned_classes?: UserAssignedClass[];
+}
+
+export async function fetchUsers(role?: string, signal?: AbortSignal): Promise<UserItem[]> {
   const query = role ? `?role=${encodeURIComponent(role)}` : "";
-  return apiFetch(`/users${query}`, { signal });
+  return apiFetch<UserItem[]>(`/users${query}`, { signal });
 }
 
 export async function createUser(data: {
@@ -285,12 +305,31 @@ export async function createUser(data: {
   phone_e164?: string;
   role: string;
   password?: string;
+  language?: string;
   school_id?: string;
   sector_id?: string;
   district_id?: string;
-}): Promise<paths["/api/v1/users"]["post"]["responses"]["201"]["content"]["application/json"]> {
-  return apiFetch("/users", {
+  class_ids?: string[];
+}): Promise<UserItem> {
+  return apiFetch<UserItem>("/users", {
     method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateUser(
+  userId: string,
+  data: {
+    full_name?: string;
+    email?: string;
+    phone_e164?: string;
+    language?: string;
+    is_active?: boolean;
+    class_ids?: string[];
+  }
+): Promise<UserItem> {
+  return apiFetch<UserItem>(`/users/${userId}`, {
+    method: "PATCH",
     body: JSON.stringify(data),
   });
 }
@@ -338,6 +377,7 @@ export async function fetchSchoolClasses(schoolId: string, signal?: AbortSignal)
     grade: number;
     academic_year: number;
     school_id: string;
+    class_teacher_id?: string | null;
   }>
 > {
   return apiFetch(`/schools/${schoolId}/classes`, { signal });
@@ -569,8 +609,24 @@ export async function updateHelpRequestStatus(
   });
 }
 
-export async function fetchAnalyticsOverview(signal?: AbortSignal): Promise<AnalyticsOverview> {
-  return apiFetch("/analytics/overview", { signal });
+export async function fetchAnalyticsOverview(
+  daysOrSignal?: number | AbortSignal,
+  signal?: AbortSignal
+): Promise<AnalyticsOverview> {
+  let days: number | undefined;
+  let effectiveSignal: AbortSignal | undefined;
+
+  if (typeof daysOrSignal === "number") {
+    days = daysOrSignal;
+    effectiveSignal = signal;
+  } else if (typeof daysOrSignal === "object" && daysOrSignal !== null) {
+    effectiveSignal = daysOrSignal as AbortSignal;
+  } else {
+    effectiveSignal = signal;
+  }
+
+  const query = days ? `?days=${days}` : "";
+  return apiFetch(`/analytics/overview${query}`, { signal: effectiveSignal });
 }
 
 export async function fetchAttendanceTrends(

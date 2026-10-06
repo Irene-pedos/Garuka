@@ -2028,6 +2028,20 @@ export interface components {
             /** Phone E164 */
             phone_e164?: string | null;
         };
+        /** UserAssignedClassResponse */
+        UserAssignedClassResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Grade */
+            grade: number;
+            /** Academic Year */
+            academic_year?: number | null;
+        };
         /** UserCreate */
         UserCreate: {
             /** Full Name */
@@ -2047,6 +2061,8 @@ export interface components {
             sector_id?: string | null;
             /** District Id */
             district_id?: string | null;
+            /** Class Ids */
+            class_ids?: string[] | null;
         };
         /** UserMeResponse */
         UserMeResponse: {
@@ -2105,6 +2121,11 @@ export interface components {
             district_id?: string | null;
             /** Is Active */
             is_active: boolean;
+            /**
+             * Assigned Classes
+             * @default []
+             */
+            assigned_classes: components["schemas"]["UserAssignedClassResponse"][];
         };
         /** UserUpdate */
         UserUpdate: {
@@ -2123,6 +2144,8 @@ export interface components {
             sector_id?: string | null;
             /** District Id */
             district_id?: string | null;
+            /** Class Ids */
+            class_ids?: string[] | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -2234,7 +2257,9 @@ export interface operations {
     };
     auth_logout: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2250,11 +2275,22 @@ export interface operations {
                     "application/json": unknown;
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     auth_get_me: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2270,11 +2306,22 @@ export interface operations {
                     "application/json": components["schemas"]["UserMeResponse"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     auth_update_me: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2307,7 +2354,9 @@ export interface operations {
     };
     auth_change_password: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2340,7 +2389,9 @@ export interface operations {
     };
     auth_change_pin: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2373,7 +2424,9 @@ export interface operations {
     };
     auth_upload_avatar: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2406,7 +2459,9 @@ export interface operations {
     };
     list_districts: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2422,11 +2477,22 @@ export interface operations {
                     "application/json": components["schemas"]["DistrictResponse"][];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     create_district: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2461,6 +2527,7 @@ export interface operations {
         parameters: {
             query?: {
                 district_id?: string | null;
+                token?: string | null;
             };
             header?: never;
             path?: never;
@@ -2490,7 +2557,9 @@ export interface operations {
     };
     create_sector: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2526,6 +2595,7 @@ export interface operations {
             query?: {
                 sector_id?: string | null;
                 q?: string | null;
+                token?: string | null;
             };
             header?: never;
             path?: never;
@@ -2555,7 +2625,9 @@ export interface operations {
     };
     create_school: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2588,7 +2660,9 @@ export interface operations {
     };
     update_school: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 id: string;
@@ -2627,6 +2701,7 @@ export interface operations {
                 role?: components["schemas"]["RoleEnum"] | null;
                 school_id?: string | null;
                 sector_id?: string | null;
+                token?: string | null;
             };
             header?: never;
             path?: never;
@@ -2656,7 +2731,9 @@ export interface operations {
     };
     create_user: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2689,7 +2766,9 @@ export interface operations {
     };
     reset_user_pin: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 id: string;
@@ -2720,7 +2799,9 @@ export interface operations {
     };
     update_user: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 id: string;
@@ -2755,7 +2836,9 @@ export interface operations {
     };
     list_school_classes: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 school_id: string;
@@ -2786,7 +2869,9 @@ export interface operations {
     };
     create_school_class: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 school_id: string;
@@ -2821,7 +2906,9 @@ export interface operations {
     };
     update_class: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 id: string;
@@ -2861,6 +2948,7 @@ export interface operations {
                 class_id?: string | null;
                 q?: string | null;
                 status?: components["schemas"]["StudentStatusEnum"] | null;
+                token?: string | null;
             };
             header?: never;
             path?: never;
@@ -2890,7 +2978,9 @@ export interface operations {
     };
     create_student: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2923,7 +3013,9 @@ export interface operations {
     };
     add_student_guardian: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 id: string;
@@ -2961,6 +3053,7 @@ export interface operations {
             query?: {
                 school_id?: string | null;
                 dry_run?: boolean;
+                token?: string | null;
             };
             header?: never;
             path?: never;
@@ -2996,6 +3089,7 @@ export interface operations {
         parameters: {
             query?: {
                 date?: string | null;
+                token?: string | null;
             };
             header?: never;
             path: {
@@ -3027,7 +3121,9 @@ export interface operations {
     };
     submit_class_attendance: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 class_id: string;
@@ -3062,7 +3158,9 @@ export interface operations {
     };
     void_absence: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 absence_id: string;
@@ -3098,6 +3196,7 @@ export interface operations {
                 from?: string | null;
                 to?: string | null;
                 format?: string | null;
+                token?: string | null;
             };
             header?: never;
             path?: never;
@@ -3134,6 +3233,7 @@ export interface operations {
                 sector_id?: string | null;
                 mentor_id?: string | null;
                 q?: string | null;
+                token?: string | null;
             };
             header?: never;
             path?: never;
@@ -3163,7 +3263,9 @@ export interface operations {
     };
     get_case_detail: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 case_id: string;
@@ -3194,7 +3296,9 @@ export interface operations {
     };
     assign_case_mentor: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 case_id: string;
@@ -3229,7 +3333,9 @@ export interface operations {
     };
     escalate_case: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 case_id: string;
@@ -3264,7 +3370,9 @@ export interface operations {
     };
     add_case_note: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 case_id: string;
@@ -3299,7 +3407,9 @@ export interface operations {
     };
     resolve_case: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 case_id: string;
@@ -3338,6 +3448,7 @@ export interface operations {
                 status?: components["schemas"]["HelpRequestStatusEnum"] | null;
                 school_id?: string | null;
                 barrier_code?: components["schemas"]["BarrierCodeEnum"] | null;
+                token?: string | null;
             };
             header?: never;
             path?: never;
@@ -3367,7 +3478,9 @@ export interface operations {
     };
     create_help_request: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3400,7 +3513,9 @@ export interface operations {
     };
     update_help_request_status: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 id: string;
@@ -3437,6 +3552,7 @@ export interface operations {
         parameters: {
             query?: {
                 sector_id?: string | null;
+                token?: string | null;
             };
             header?: never;
             path?: never;
@@ -3466,7 +3582,9 @@ export interface operations {
     };
     get_analytics_overview: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3482,12 +3600,22 @@ export interface operations {
                     "application/json": components["schemas"]["AnalyticsOverviewResponse"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     get_attendance_trends: {
         parameters: {
             query?: {
                 days?: number;
+                token?: string | null;
             };
             header?: never;
             path?: never;
@@ -3517,7 +3645,9 @@ export interface operations {
     };
     compare_schools: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3533,11 +3663,22 @@ export interface operations {
                     "application/json": components["schemas"]["SchoolCompareItem"][];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     get_app_settings: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3553,11 +3694,22 @@ export interface operations {
                     "application/json": components["schemas"]["AppSettingsRead"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     update_app_settings: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -3594,6 +3746,7 @@ export interface operations {
                 status?: components["schemas"]["SmsStatusEnum"] | null;
                 template_key?: string | null;
                 limit?: number;
+                token?: string | null;
             };
             header?: never;
             path?: never;
@@ -3623,7 +3776,9 @@ export interface operations {
     };
     retry_sms_outbox: {
         parameters: {
-            query?: never;
+            query?: {
+                token?: string | null;
+            };
             header?: never;
             path: {
                 id: string;
@@ -3658,6 +3813,7 @@ export interface operations {
                 action?: string | null;
                 entity_type?: string | null;
                 limit?: number;
+                token?: string | null;
             };
             header?: never;
             path?: never;

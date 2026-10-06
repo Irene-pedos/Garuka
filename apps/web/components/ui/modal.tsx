@@ -24,63 +24,84 @@ export function AccessibleModal({
 }: AccessibleModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocusedElement = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
 
   useEffect(() => {
-    if (isOpen) {
-      previouslyFocusedElement.current = document.activeElement as HTMLElement;
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === "Escape") {
+  useEffect(() => {
+    if (!isOpen) return;
+
+    previouslyFocusedElement.current = document.activeElement as HTMLElement;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onCloseRef.current();
+      }
+
+      // Focus trap
+      if (e.key === "Tab" && dialogRef.current) {
+        const focusableElements = dialogRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusableElements.length === 0) return;
+
+        const first = focusableElements[0];
+        const last = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey && document.activeElement === first) {
           e.preventDefault();
-          onClose();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
         }
+      }
+    };
 
-        // Focus trap
-        if (e.key === "Tab" && dialogRef.current) {
-          const focusableElements = dialogRef.current.querySelectorAll<HTMLElement>(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-          );
-          if (focusableElements.length === 0) return;
+    document.addEventListener("keydown", handleKeyDown);
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
-          const first = focusableElements[0];
-          const last = focusableElements[focusableElements.length - 1];
+    // Focus first interactive element or input on open
+    const timer = setTimeout(() => {
+      if (dialogRef.current) {
+        const autoFocusElement = dialogRef.current.querySelector<HTMLElement>(
+          "[autofocus], [data-autofocus]"
+        );
+        const firstFormInput = dialogRef.current.querySelector<HTMLElement>(
+          "input:not([disabled]), select:not([disabled]), textarea:not([disabled])"
+        );
+        const firstFocusable = dialogRef.current.querySelector<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])'
+        );
 
-          if (e.shiftKey && document.activeElement === first) {
-            e.preventDefault();
-            last.focus();
-          } else if (!e.shiftKey && document.activeElement === last) {
-            e.preventDefault();
-            first.focus();
-          }
+        if (autoFocusElement) {
+          autoFocusElement.focus();
+        } else if (firstFormInput) {
+          firstFormInput.focus();
+        } else if (firstFocusable) {
+          firstFocusable.focus();
+        } else {
+          dialogRef.current.focus();
         }
-      };
+      }
+    }, 50);
 
-      document.addEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "hidden";
-
-      // Focus first focusable element or modal container
-      setTimeout(() => {
-        if (dialogRef.current) {
-          const firstFocusable = dialogRef.current.querySelector<HTMLElement>(
-            'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])'
-          );
-          if (firstFocusable) {
-            firstFocusable.focus();
-          } else {
-            dialogRef.current.focus();
-          }
-        }
-      }, 50);
-
-      return () => {
-        document.removeEventListener("keydown", handleKeyDown);
-        document.body.style.overflow = "";
-        if (previouslyFocusedElement.current) {
-          previouslyFocusedElement.current.focus();
-        }
-      };
-    }
-  }, [isOpen, onClose]);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = originalOverflow;
+      if (
+        previouslyFocusedElement.current &&
+        typeof previouslyFocusedElement.current.focus === "function"
+      ) {
+        previouslyFocusedElement.current.focus();
+      }
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

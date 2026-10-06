@@ -1,66 +1,61 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { createUser, fetchUsers, resetUserPin } from "@/lib/api/client";
+import { fetchUsers, resetUserPin, UserItem } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
-import { AccessibleModal } from "@/components/ui/modal";
 import { ScopeHeader } from "@/components/scope-header";
-import { Plus, RefreshCw, KeyRound, CheckCircle2, AlertTriangle } from "lucide-react";
-
-interface UserItem {
-  id: string;
-  full_name: string;
-  email?: string | null;
-  phone_masked?: string | null;
-  role: string;
-  language: string;
-  is_active: boolean;
-}
+import { StaffStats } from "./components/staff-stats";
+import { StaffTable } from "./components/staff-table";
+import { RegisterStaffModal } from "./components/register-staff-modal";
+import { EditStaffModal } from "./components/edit-staff-modal";
+import { ResetPinModal } from "./components/reset-pin-modal";
+import {
+  Plus,
+  RefreshCw,
+  Search,
+  CheckCircle2,
+  AlertTriangle,
+  X,
+} from "lucide-react";
 
 export default function UsersPage() {
   const { user } = useAuth();
   const [users, setUsers] = useState<UserItem[]>([]);
   const [roleFilter, setRoleFilter] = useState<string>("");
+  const [search, setSearch] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "disabled">("all");
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // Create User Modal
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [role, setRole] = useState("teacher");
-  const [password, setPassword] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
-
-  // Pin Reset Modal
+  // Modals state
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserItem | null>(null);
   const [pinResetTarget, setPinResetTarget] = useState<UserItem | null>(null);
   const [pinResetLoading, setPinResetLoading] = useState(false);
 
-  // Notifications
+  // Notification banners
   const [message, setMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const loadUsers = (signal?: AbortSignal) => {
+  const loadUsers = useCallback((signal?: AbortSignal) => {
     setLoading(true);
     setFetchError(null);
     fetchUsers(roleFilter || undefined, signal)
-      .then((data) => setUsers(data as UserItem[]))
+      .then((data) => setUsers(data))
       .catch((err) => {
         if (err.name !== "AbortError") {
           setFetchError(err.message || "Failed to load staff list");
         }
       })
       .finally(() => setLoading(false));
-  };
+  }, [roleFilter]);
 
   useEffect(() => {
     const controller = new AbortController();
     loadUsers(controller.signal);
     return () => controller.abort();
-  }, [roleFilter]);
+  }, [loadUsers]);
 
   const handleConfirmResetPin = async () => {
     if (!pinResetTarget) return;
@@ -78,40 +73,49 @@ export default function UsersPage() {
     }
   };
 
-  const handleCreateUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setCreateError(null);
-    try {
-      await createUser({
-        full_name: fullName,
-        email: email || undefined,
-        phone_e164: phone || undefined,
-        role,
-        password: password || undefined,
-        school_id: user?.school_id || undefined,
-        sector_id: user?.sector_id || undefined,
-      });
-      setIsModalOpen(false);
-      setFullName("");
-      setEmail("");
-      setPhone("");
-      setPassword("");
-      loadUsers();
-      setMessage("Staff member created successfully!");
-      setTimeout(() => setMessage(null), 5000);
-    } catch (err: unknown) {
-      setCreateError(err instanceof Error ? err.message : "Creation failed");
-    } finally {
-      setSubmitting(false);
-    }
+  const handleStaffRegistered = (newUser: UserItem) => {
+    setMessage(`Staff member "${newUser.full_name}" registered successfully.`);
+    setTimeout(() => setMessage(null), 5000);
+    loadUsers();
   };
 
+  const handleStaffUpdated = (updatedUser: UserItem) => {
+    setMessage(`Staff member "${updatedUser.full_name}" updated successfully.`);
+    setTimeout(() => setMessage(null), 5000);
+    setUsers((prev) =>
+      prev.map((u) => (u.id === updatedUser.id ? updatedUser : u))
+    );
+  };
+
+  // Filtered staff list based on search and status
+  const filteredUsers = useMemo(() => {
+    return users.filter((u) => {
+      // Status filter
+      if (statusFilter === "active" && !u.is_active) return false;
+      if (statusFilter === "disabled" && u.is_active) return false;
+
+      // Search filter
+      if (!search.trim()) return true;
+      const query = search.toLowerCase().trim();
+      const nameMatch = u.full_name?.toLowerCase().includes(query);
+      const emailMatch = u.email?.toLowerCase().includes(query);
+      const phoneMatch =
+        (u.phone_masked && u.phone_masked.toLowerCase().includes(query)) ||
+        (u.phone_e164 && u.phone_e164.toLowerCase().includes(query));
+      const classMatch = u.assigned_classes?.some((c) =>
+        c.name.toLowerCase().includes(query)
+      );
+
+      return nameMatch || emailMatch || phoneMatch || classMatch;
+    });
+  }, [users, search, statusFilter]);
+
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="w-full space-y-6">
+      {/* Header with Scope & Actions */}
       <ScopeHeader
         title="Staff & User Accounts"
-        description="Manage teachers, community mentors, school administrators, and USSD credentials."
+        description="Manage teachers, community mentors, school administrators, and USSD attendance credentials."
         scope={
           user
             ? {
@@ -128,316 +132,171 @@ export default function UsersPage() {
             : undefined
         }
       >
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => loadUsers()}
-          disabled={loading}
-        >
-          <RefreshCw className={`h-4 w-4 mr-1.5 ${loading ? "animate-spin" : ""}`} />
-          Refresh
-        </Button>
-        <Button
-          size="sm"
-          onClick={() => {
-            setIsModalOpen(true);
-            setCreateError(null);
-          }}
-        >
-          <Plus className="h-4 w-4 mr-1.5" />
-          Add New Staff
-        </Button>
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => loadUsers()}
+            disabled={loading}
+            className="flex-1 sm:flex-initial"
+          >
+            <RefreshCw className={`h-4 w-4 mr-1.5 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => setIsRegisterModalOpen(true)}
+            className="flex-1 sm:flex-initial"
+          >
+            <Plus className="h-4 w-4 mr-1.5" />
+            Add New Staff
+          </Button>
+        </div>
       </ScopeHeader>
 
       {/* Notifications */}
       {message && (
         <div
           role="status"
-          className="p-4 bg-emerald-500/15 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-lg flex items-center gap-2 text-sm font-medium"
+          className="p-3.5 bg-emerald-500/15 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 rounded-lg flex items-center justify-between text-xs font-medium"
         >
-          <CheckCircle2 className="h-4 w-4 shrink-0" />
-          <span>{message}</span>
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            <span>{message}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setMessage(null)}
+            className="text-emerald-600 hover:text-emerald-800 dark:hover:text-emerald-200"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
       )}
 
       {(errorMessage || fetchError) && (
         <div
           role="alert"
-          className="p-4 bg-destructive/15 border border-destructive/20 text-destructive rounded-lg flex items-center justify-between"
+          className="p-3.5 bg-destructive/15 border border-destructive/20 text-destructive rounded-lg flex items-center justify-between text-xs font-medium"
         >
-          <div className="flex items-center gap-2 text-sm font-medium">
+          <div className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 shrink-0" />
             <span>{errorMessage || fetchError}</span>
           </div>
           {fetchError && (
-            <Button variant="outline" size="sm" onClick={() => loadUsers()}>
+            <Button variant="outline" size="sm" onClick={() => loadUsers()} className="h-7 text-xs">
               Retry
             </Button>
           )}
         </div>
       )}
 
-      {/* Filter Tabs */}
-      <div className="flex flex-wrap items-center gap-2">
+      {/* Stats KPI Cards */}
+      <StaffStats users={users} loading={loading} />
+
+      {/* Filter and Search Bar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1 w-full">
+        {/* Search Input */}
+        <div className="relative flex-1 w-full sm:max-w-md lg:max-w-lg xl:max-w-xl">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name, phone, email, or class..."
+            className="w-full pl-8.5 pr-8 py-1.5 text-xs rounded-lg border bg-card text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-2 focus:ring-primary h-9"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Status Filter Toggle */}
+        <div className="flex items-center gap-1.5 self-start sm:self-auto overflow-x-auto py-0.5">
+          <span className="text-xs text-muted-foreground font-medium hidden md:inline">
+            Status:
+          </span>
+          {(["all", "active", "disabled"] as const).map((st) => (
+            <Button
+              key={st}
+              variant={statusFilter === st ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => setStatusFilter(st)}
+              className="text-xs h-8 capitalize px-2.5"
+            >
+              {st}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {/* Role Filter Tabs (Scrollable on mobile) */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 sm:pb-0 sm:flex-wrap no-scrollbar w-full">
         {[
           { label: "All Roles", value: "" },
           { label: "Teachers", value: "teacher" },
-          { label: "Mentors", value: "mentor" },
+          { label: "Community Mentors", value: "mentor" },
           { label: "Head Teachers", value: "head_teacher" },
-          { label: "Sector Officers", value: "sector_officer" },
+          ...(user?.role === "admin"
+            ? [
+                { label: "Sector Officers", value: "sector_officer" },
+                { label: "District Directors", value: "district_director" },
+              ]
+            : []),
         ].map((tab) => (
           <Button
             key={tab.value}
             variant={roleFilter === tab.value ? "default" : "outline"}
             size="sm"
             onClick={() => setRoleFilter(tab.value)}
-            className="text-xs h-8"
+            className="text-xs h-8 shrink-0"
           >
             {tab.label}
           </Button>
         ))}
       </div>
 
-      {/* Table */}
-      <div className="border rounded-xl bg-card overflow-hidden shadow-xs">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-muted/50 border-b text-xs uppercase text-muted-foreground font-semibold">
-              <tr>
-                <th className="px-6 py-4">Full Name</th>
-                <th className="px-6 py-4">Role</th>
-                <th className="px-6 py-4">Phone (USSD)</th>
-                <th className="px-6 py-4">Email</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground animate-pulse">
-                    Loading staff directory...
-                  </td>
-                </tr>
-              ) : users.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
-                    No users found matching current filter.
-                  </td>
-                </tr>
-              ) : (
-                users.map((u) => (
-                  <tr key={u.id} className="hover:bg-muted/20">
-                    <td className="px-6 py-4 font-medium text-foreground">
-                      {u.full_name}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="capitalize font-medium text-xs text-foreground bg-muted px-2 py-0.5 rounded">
-                        {u.role.replace("_", " ")}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 font-mono text-xs text-muted-foreground">
-                      {u.phone_masked || "—"}
-                    </td>
-                    <td className="px-6 py-4 text-muted-foreground text-xs">
-                      {u.email || "—"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          u.is_active
-                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                            : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {u.is_active ? "Active" : "Disabled"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      {["teacher", "mentor"].includes(u.role) && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setPinResetTarget(u)}
-                          className="h-8 text-xs gap-1.5"
-                        >
-                          <KeyRound className="h-3 w-3" />
-                          Reset PIN
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      {/* Staff Directory Table */}
+      <StaffTable
+        users={filteredUsers}
+        loading={loading}
+        onEditUser={(u) => setEditingUser(u)}
+        onResetPin={(u) => setPinResetTarget(u)}
+        onOpenRegisterModal={() => setIsRegisterModalOpen(true)}
+      />
 
-      {/* Accessible Create User Modal */}
-      <AccessibleModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setCreateError(null);
-        }}
-        title="Register Staff Member"
-        description="Provision teachers, mentors, or administrators with USSD / Dashboard access."
-      >
-        <form onSubmit={handleCreateUser} className="space-y-4">
-          {createError && (
-            <div
-              role="alert"
-              className="p-3 bg-destructive/15 border border-destructive/20 text-destructive rounded text-xs font-medium flex items-center gap-1.5"
-            >
-              <AlertTriangle className="h-4 w-4 shrink-0" />
-              <span>{createError}</span>
-            </div>
-          )}
+      {/* Register Staff Modal */}
+      <RegisterStaffModal
+        isOpen={isRegisterModalOpen}
+        onClose={() => setIsRegisterModalOpen(false)}
+        onSuccess={handleStaffRegistered}
+        currentUserRole={user?.role}
+        schoolId={user?.school_id || undefined}
+      />
 
-          <div className="space-y-1.5">
-            <label htmlFor="user-full-name" className="text-xs font-semibold uppercase text-muted-foreground">
-              Full Name
-            </label>
-            <input
-              id="user-full-name"
-              type="text"
-              required
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="e.g. Jean Damascene"
-              className="w-full px-3 py-2 border rounded-md text-sm bg-background focus:outline-hidden focus:ring-2 focus:ring-primary"
-            />
-          </div>
+      {/* Edit Staff Modal */}
+      <EditStaffModal
+        user={editingUser}
+        isOpen={!!editingUser}
+        onClose={() => setEditingUser(null)}
+        onSuccess={handleStaffUpdated}
+        schoolId={user?.school_id || undefined}
+      />
 
-          <div className="space-y-1.5">
-            <label htmlFor="user-role" className="text-xs font-semibold uppercase text-muted-foreground">
-              Role
-            </label>
-            <select
-              id="user-role"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md text-sm bg-background focus:outline-hidden focus:ring-2 focus:ring-primary"
-            >
-              <option value="teacher">Teacher (USSD Daily Attendance)</option>
-              <option value="mentor">Community Mentor (USSD Home Visits)</option>
-              {user?.role === "admin" && (
-                <>
-                  <option value="head_teacher">Head Teacher</option>
-                  <option value="sector_officer">Sector Officer (SEO)</option>
-                  <option value="district_director">District Director</option>
-                  <option value="admin">National Administrator</option>
-                </>
-              )}
-            </select>
-          </div>
-
-          <div className="space-y-1.5">
-            <label htmlFor="user-phone" className="text-xs font-semibold uppercase text-muted-foreground">
-              Phone Number (E.164: +2507XXXXXXXX for USSD)
-            </label>
-            <input
-              id="user-phone"
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+250788123456"
-              className="w-full px-3 py-2 border rounded-md text-sm bg-background font-mono focus:outline-hidden focus:ring-2 focus:ring-primary"
-            />
-          </div>
-
-          {["admin", "head_teacher", "sector_officer", "district_director"].includes(role) && (
-            <>
-              <div className="space-y-1.5">
-                <label htmlFor="user-email" className="text-xs font-semibold uppercase text-muted-foreground">
-                  Email
-                </label>
-                <input
-                  id="user-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="user@garuka.rw"
-                  className="w-full px-3 py-2 border rounded-md text-sm bg-background focus:outline-hidden focus:ring-2 focus:ring-primary"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label htmlFor="user-password" className="text-xs font-semibold uppercase text-muted-foreground">
-                  Dashboard Password
-                </label>
-                <input
-                  id="user-password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  className="w-full px-3 py-2 border rounded-md text-sm bg-background focus:outline-hidden focus:ring-2 focus:ring-primary"
-                />
-              </div>
-            </>
-          )}
-
-          <p className="text-xs text-muted-foreground italic">
-            * USSD PIN is set by the staff member upon their initial dial into the gateway.
-          </p>
-
-          <div className="flex justify-end gap-2 pt-3 border-t">
-            <Button
-              variant="outline"
-              type="button"
-              onClick={() => {
-                setIsModalOpen(false);
-                setCreateError(null);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={submitting}>
-              {submitting ? "Saving..." : "Create Staff Account"}
-            </Button>
-          </div>
-        </form>
-      </AccessibleModal>
-
-      {/* Accessible Reset PIN Confirmation Dialog */}
-      <AccessibleModal
+      {/* Reset USSD PIN Modal */}
+      <ResetPinModal
+        user={pinResetTarget}
         isOpen={!!pinResetTarget}
         onClose={() => setPinResetTarget(null)}
-        title="Confirm USSD PIN Reset"
-        description="Reset credentials for mobile dialer."
-        maxWidth="sm"
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-foreground">
-            Are you sure you want to reset the USSD PIN for{" "}
-            <span className="font-semibold">{pinResetTarget?.full_name}</span>?
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Their existing PIN will be cleared. On their next USSD dial, they will be prompted to choose a new 4-digit PIN.
-          </p>
-
-          <div className="flex justify-end gap-2 pt-2 border-t">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPinResetTarget(null)}
-              disabled={pinResetLoading}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={handleConfirmResetPin}
-              disabled={pinResetLoading}
-            >
-              {pinResetLoading ? "Resetting..." : "Reset PIN"}
-            </Button>
-          </div>
-        </div>
-      </AccessibleModal>
+        onConfirm={handleConfirmResetPin}
+        loading={pinResetLoading}
+      />
     </div>
   );
 }

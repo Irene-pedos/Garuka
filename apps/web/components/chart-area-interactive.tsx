@@ -19,13 +19,9 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import type { DailyAttendanceTrendItem } from "@/lib/api/client"
+  fetchAttendanceTrends,
+  type DailyAttendanceTrendItem,
+} from "@/lib/api/client"
 
 export const description = "An interactive area chart showing daily attendance and absence trends"
 
@@ -40,75 +36,172 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
+export type TimelineRange = "7d" | "30d" | "90d"
+
 interface ChartAreaInteractiveProps {
   data?: DailyAttendanceTrendItem[]
   isLoading?: boolean
+  onTimeRangeChange?: (range: TimelineRange) => void
 }
 
 export function ChartAreaInteractive({
   data = [],
   isLoading = false,
+  onTimeRangeChange,
 }: ChartAreaInteractiveProps) {
-  const [timeRange, setTimeRange] = React.useState("90d")
+  const [timeRange, setTimeRange] = React.useState<TimelineRange>("90d")
+  const [trendData, setTrendData] = React.useState<DailyAttendanceTrendItem[]>(data)
+  const [rangeLoading, setRangeLoading] = React.useState(false)
 
-  const filteredData = React.useMemo(() => {
-    if (!data || data.length === 0) return []
+  // Sync with incoming parent prop updates
+  React.useEffect(() => {
+    if (data && data.length > 0) {
+      setTrendData(data)
+    }
+  }, [data])
 
-    let daysToSubtract = 90
-    if (timeRange === "30d") {
-      daysToSubtract = 30
-    } else if (timeRange === "7d") {
-      daysToSubtract = 7
+  // Handle timeline change: notify parent, fetch fresh data for this window if needed
+  const handleTimeRangeSelect = async (newRange: TimelineRange) => {
+    setTimeRange(newRange)
+    onTimeRangeChange?.(newRange)
+
+    const days = newRange === "7d" ? 7 : newRange === "30d" ? 30 : 90
+    setRangeLoading(true)
+    try {
+      const fetched = await fetchAttendanceTrends(days)
+      if (fetched && fetched.length > 0) {
+        setTrendData(fetched)
+      }
+    } catch {
+      // Keep existing data on network failure
+    } finally {
+      setRangeLoading(false)
+    }
+  }
+
+  // Build the framed timeline data for the chosen window
+  const framedData = React.useMemo(() => {
+    if (!trendData || trendData.length === 0) return []
+
+    const daysCount = timeRange === "7d" ? 7 : timeRange === "30d" ? 30 : 90
+
+    // Map existing data points by YYYY-MM-DD
+    const dataMap = new Map<string, DailyAttendanceTrendItem>()
+    for (const item of trendData) {
+      dataMap.set(item.date, item)
     }
 
-    const latestDateStr = data[data.length - 1]?.date
-    const referenceDate = latestDateStr ? new Date(latestDateStr) : new Date()
-    const startDate = new Date(referenceDate)
-    startDate.setDate(startDate.getDate() - daysToSubtract)
+    // Determine latest reference date (either today or the latest record date)
+    const sortedDates = [...trendData.map((d) => d.date)].sort()
+    const latestRecordDate = sortedDates[sortedDates.length - 1]
+    const todayStr = new Date().toISOString().split("T")[0]
+    const anchorStr =
+      latestRecordDate && latestRecordDate > todayStr
+        ? latestRecordDate
+        : latestRecordDate || todayStr
 
-    return data.filter((item) => new Date(item.date) >= startDate)
-  }, [data, timeRange])
+    // Parse date safely avoiding UTC midnight shifting
+    const [y, m, d] = anchorStr.split("-").map(Number)
+    const anchorDate = new Date(y, m - 1, d)
+
+    const result: DailyAttendanceTrendItem[] = []
+    for (let i = daysCount - 1; i >= 0; i--) {
+      const curDate = new Date(anchorDate)
+      curDate.setDate(curDate.getDate() - i)
+      const curYear = curDate.getFullYear()
+      const curMonth = String(curDate.getMonth() + 1).padStart(2, "0")
+      const curDay = String(curDate.getDate()).padStart(2, "0")
+      const dateKey = `${curYear}-${curMonth}-${curDay}`
+
+      if (dataMap.has(dateKey)) {
+        result.push(dataMap.get(dateKey)!)
+      } else {
+        result.push({
+          date: dateKey,
+          present: 0,
+          absent: 0,
+          enrolled: 0,
+          cases: 0,
+        })
+      }
+    }
+
+    return result
+  }, [trendData, timeRange])
+
+  // Summary statistics for the active window
+  const stats = React.useMemo(() => {
+    const recordedDays = framedData.filter((d) => d.present > 0 || d.absent > 0)
+    const totalPresent = recordedDays.reduce((acc, d) => acc + d.present, 0)
+    const totalAbsent = recordedDays.reduce((acc, d) => acc + d.absent, 0)
+    const totalSubmissions = recordedDays.length
+    const avgAttendance =
+      totalPresent + totalAbsent > 0
+        ? ((totalPresent / (totalPresent + totalAbsent)) * 100).toFixed(1)
+        : null
+
+    return {
+      totalSubmissions,
+      totalPresent,
+      totalAbsent,
+      avgAttendance,
+    }
+  }, [framedData])
 
   return (
     <Card className="pt-0">
-      <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
-        <div className="grid flex-1 gap-1">
-          <CardTitle>Attendance Trends</CardTitle>
-          <CardDescription>
-            Daily student roll-call records from the database
+      <CardHeader className="flex flex-col gap-4 border-b py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="grid gap-1">
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-base font-semibold">Attendance Trends</CardTitle>
+            {stats.avgAttendance && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                {stats.avgAttendance}% Avg Rate
+              </span>
+            )}
+          </div>
+          <CardDescription className="text-xs">
+            {timeRange === "7d"
+              ? "Daily attendance roll-calls for the past 7 days"
+              : timeRange === "30d"
+              ? "Daily attendance roll-calls for the past 30 days"
+              : "Quarterly attendance roll-calls for the past 3 months (90 days)"}
+            {stats.totalSubmissions > 0 && ` • ${stats.totalSubmissions} days recorded`}
           </CardDescription>
         </div>
-        <Select
-          value={timeRange}
-          onValueChange={(val) => {
-            if (val) setTimeRange(val)
-          }}
-        >
-          <SelectTrigger
-            className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
-            aria-label="Select a time range"
-          >
-            <SelectValue placeholder="Last 3 months" />
-          </SelectTrigger>
-          <SelectContent className="rounded-xl">
-            <SelectItem value="90d" className="rounded-lg">
-              Last 3 months
-            </SelectItem>
-            <SelectItem value="30d" className="rounded-lg">
-              Last 30 days
-            </SelectItem>
-            <SelectItem value="7d" className="rounded-lg">
-              Last 7 days
-            </SelectItem>
-          </SelectContent>
-        </Select>
+
+        {/* Timeline Range Selector Pills (Accessible & Visible on all screens) */}
+        <div className="flex items-center gap-1 bg-muted/70 p-1 rounded-lg border border-border/60 self-start sm:self-auto shadow-2xs">
+          {[
+            { id: "7d" as const, label: "Last 7 days", shortLabel: "7D" },
+            { id: "30d" as const, label: "Last 30 days", shortLabel: "30D" },
+            { id: "90d" as const, label: "Last 3 months", shortLabel: "3M" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => handleTimeRangeSelect(tab.id)}
+              disabled={rangeLoading}
+              aria-pressed={timeRange === tab.id}
+              className={`px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer ${
+                timeRange === tab.id
+                  ? "bg-background text-foreground shadow-xs font-semibold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+              }`}
+            >
+              <span className="hidden sm:inline">{tab.label}</span>
+              <span className="sm:hidden">{tab.shortLabel}</span>
+            </button>
+          ))}
+        </div>
       </CardHeader>
+
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
         {isLoading ? (
           <div className="flex h-[250px] w-full items-center justify-center text-sm text-muted-foreground animate-pulse">
             Loading attendance trends from database...
           </div>
-        ) : filteredData.length === 0 ? (
+        ) : framedData.length === 0 ? (
           <div className="flex h-[250px] w-full flex-col items-center justify-center gap-1 text-sm text-muted-foreground">
             <p className="font-medium text-foreground">No attendance records in this window</p>
             <p className="text-xs">Submissions logged via USSD or Web roll-call will plot here automatically.</p>
@@ -118,7 +211,7 @@ export function ChartAreaInteractive({
             config={chartConfig}
             className="aspect-auto h-[250px] w-full"
           >
-            <AreaChart data={filteredData}>
+            <AreaChart data={framedData}>
               <defs>
                 <linearGradient id="fillPresent" x1="0" y1="0" x2="0" y2="1">
                   <stop
@@ -151,9 +244,16 @@ export function ChartAreaInteractive({
                 tickLine={false}
                 axisLine={false}
                 tickMargin={8}
-                minTickGap={32}
+                minTickGap={timeRange === "7d" ? 12 : timeRange === "30d" ? 24 : 36}
                 tickFormatter={(value) => {
-                  const date = new Date(value)
+                  const [y, m, d] = String(value).split("-").map(Number)
+                  const date = new Date(y, m - 1, d)
+                  if (timeRange === "7d") {
+                    return date.toLocaleDateString("en-US", {
+                      weekday: "short",
+                      day: "numeric",
+                    })
+                  }
                   return date.toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
@@ -165,8 +265,10 @@ export function ChartAreaInteractive({
                 content={
                   <ChartTooltipContent
                     labelFormatter={(value) => {
-                      return new Date(value).toLocaleDateString("en-US", {
-                        weekday: "short",
+                      const [y, m, d] = String(value).split("-").map(Number)
+                      const date = new Date(y, m - 1, d)
+                      return date.toLocaleDateString("en-US", {
+                        weekday: "long",
                         month: "short",
                         day: "numeric",
                         year: "numeric",
@@ -182,6 +284,7 @@ export function ChartAreaInteractive({
                 fill="url(#fillAbsent)"
                 stroke="var(--color-absent)"
                 stackId="a"
+                isAnimationActive={true}
               />
               <Area
                 dataKey="present"
@@ -189,6 +292,7 @@ export function ChartAreaInteractive({
                 fill="url(#fillPresent)"
                 stroke="var(--color-present)"
                 stackId="a"
+                isAnimationActive={true}
               />
               <ChartLegend content={<ChartLegendContent />} />
             </AreaChart>
