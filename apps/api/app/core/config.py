@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     SMS_QUIET_HOURS_START: str = "19:00"
     SMS_QUIET_HOURS_END: str = "07:00"
     LOG_USSD_PHONE: bool = False
+    SCHEDULER_ENABLED: bool = True
 
     # Rules Engine Defaults
     RULE_CONSECUTIVE_DAYS: int = 3
@@ -41,6 +42,10 @@ class Settings(BaseSettings):
     @property
     def cors_origins_list(self) -> list[str]:
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
+
+    @property
+    def at_allowed_ips_list(self) -> list[str]:
+        return [ip.strip() for ip in self.AT_ALLOWED_IPS.split(",") if ip.strip()]
 
 
 settings = Settings()

@@ -6,8 +6,10 @@ import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.base import utc_now
 from app.models.student import (
     Class,
+    ConsentSourceEnum,
     Guardian,
     SexEnum,
     Student,
@@ -122,28 +124,67 @@ async def import_students_csv(
             if grade_match:
                 grade = int(grade_match.group(0))
 
+            # Derive academic year from the current Kigali business date rather
+            # than hardcoding a year that will go stale.
+            from app.services.ussd.calendar_helper import get_kigali_today as _kigali_today
+            academic_year = _kigali_today().year
+
             target_class = Class(
                 school_id=school_id,
                 name=class_name.strip(),
                 grade=grade,
-                academic_year=2026,
+                academic_year=academic_year,
             )
             db.add(target_class)
             await db.flush()
             classes_by_name[class_key] = target_class
 
         # Parse sex & birth year
-        sex_str = row.get("sex", "").upper()
-        sex = SexEnum.F if sex_str == "F" else (SexEnum.M if sex_str == "M" else None)
+        sex_str = row.get("sex", "").strip().upper()
+        if sex_str:
+            if sex_str not in ("F", "M"):
+                errors.append(
+                    CSVImportRowError(
+                        row=row_index,
+                        message=f"Invalid sex '{sex_str}', must be 'F' or 'M'",
+                    )
+                )
+                continue
+            sex = SexEnum.F if sex_str == "F" else SexEnum.M
+        else:
+            sex = None
+
         birth_year = None
         birth_str = row.get("birth_year")
         if birth_str:
-            try:
-                birth_year = int(birth_str)
-            except ValueError:
-                pass
+            birth_str = birth_str.strip()
+            if birth_str:
+                try:
+                    birth_year = int(birth_str)
+                    from app.services.ussd.calendar_helper import get_kigali_today as _kigali_today
+                    current_year = _kigali_today().year
+                    if birth_year < 1900 or birth_year > current_year:
+                        raise ValueError
+                except ValueError:
+                    errors.append(
+                        CSVImportRowError(
+                            row=row_index,
+                            message=f"Invalid birth_year '{birth_str}', 4-digit year expected",
+                        )
+                    )
+                    continue
 
         student_code = row.get("student_code") or None
+
+        # Check guardian consent: explicit false/no/0 turns off consent;
+        # otherwise school administrative form serves as verified consent.
+        consent_val = (row.get("consent") or row.get("guardian_consent") or "").strip().lower()
+        if consent_val in ("false", "no", "0"):
+            consent_at = None
+            consent_source = None
+        else:
+            consent_at = utc_now()
+            consent_source = ConsentSourceEnum.school_form
 
         # Find or create guardian
         guard_res = await db.execute(select(Guardian).where(Guardian.phone_e164 == guardian_phone))
@@ -153,9 +194,14 @@ async def import_students_csv(
                 full_name=guardian_name,
                 phone_e164=guardian_phone,
                 language=LanguageEnum.rw,
+                consent_at=consent_at,
+                consent_source=consent_source,
             )
             db.add(guardian)
             await db.flush()
+        elif consent_at and not guardian.consent_at:
+            guardian.consent_at = consent_at
+            guardian.consent_source = consent_source
 
         # Check existing student in class with roll_number
         stud_res = await db.execute(
@@ -214,8 +260,8 @@ async def import_students_csv(
         await db.commit()
 
     return CSVImportResult(
-        created=created_count if not dry_run and not errors else 0,
-        updated=updated_count if not dry_run and not errors else 0,
+        created=created_count if not errors else 0,
+        updated=updated_count if not errors else 0,
         skipped=skipped_count,
         errors=errors,
     )

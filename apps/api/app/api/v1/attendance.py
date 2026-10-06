@@ -14,13 +14,10 @@ from app.models.attendance import (
     Absence,
     AbsenceStatusEnum,
     AttendanceSubmission,
-    ReasonSourceEnum,
     SubmissionSourceEnum,
 )
-from app.models.base import utc_now
 from app.models.geo import School
-from app.models.messaging import AuditLog
-from app.models.student import Class, Student, StudentStatusEnum, student_guardians
+from app.models.student import Class, Student, StudentStatusEnum
 from app.models.user import RoleEnum, User
 from app.schemas.attendance import (
     AttendanceSubmissionResponse,
@@ -31,8 +28,12 @@ from app.schemas.attendance import (
     StudentAttendanceItem,
     SubmitAttendanceRequest,
 )
-from app.services.rules_engine import evaluate_student
-from app.services.sms.outbox_worker import enqueue_sms
+from app.services.attendance_service import (
+    AttendanceNotFoundError,
+    AttendanceValidationError,
+    record_class_attendance,
+    void_absence_record,
+)
 from app.services.ussd.calendar_helper import get_kigali_today, is_school_day
 
 router = APIRouter(tags=["attendance"])
@@ -167,131 +168,20 @@ async def submit_class_attendance(
     target_date = payload.date
     absent_ids_set = set(payload.absent_student_ids)
 
-    # Validate that absent students belong to this class
-    if absent_ids_set:
-        valid_res = await db.execute(
-            select(Student.id).where(
-                Student.id.in_(absent_ids_set),
-                Student.class_id == class_id,
-            )
-        )
-        found_ids = set(valid_res.scalars().all())
-        invalid_ids = absent_ids_set - found_ids
-        if invalid_ids:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Students not in this class: {[str(i) for i in invalid_ids]}",
-            )
-
-    # 1. Upsert AttendanceSubmission
-    sub_res = await db.execute(
-        select(AttendanceSubmission).where(
-            AttendanceSubmission.class_id == class_id,
-            AttendanceSubmission.date == target_date,
-        )
-    )
-    submission = sub_res.scalar_one_or_none()
-
-    if not submission:
-        submission = AttendanceSubmission(
+    try:
+        submission = await record_class_attendance(
+            db=db,
             class_id=class_id,
-            date=target_date,
-            submitted_by=current_user.id,
+            target_date=target_date,
+            absent_student_ids=absent_ids_set,
+            submitted_by_user_id=current_user.id,
+            submitted_by_role=current_user.role.value,
             source=SubmissionSourceEnum.dashboard,
-            absent_count=len(absent_ids_set),
-            submitted_at=utc_now(),
+            class_name=cls.name,
         )
-        db.add(submission)
-        await db.flush()
-    else:
-        submission.submitted_by = current_user.id
-        submission.source = SubmissionSourceEnum.dashboard
-        submission.absent_count = len(absent_ids_set)
-        submission.submitted_at = utc_now()
-        await db.flush()
-
-    # 2. Reconcile absences
-    existing_abs_res = await db.execute(
-        select(Absence).where(
-            Absence.submission_id == submission.id,
-        )
-    )
-    existing_absences = {ab.student_id: ab for ab in existing_abs_res.scalars().all()}
-
-    # Void absences not in payload
-    for sid, ab in existing_absences.items():
-        if sid not in absent_ids_set and ab.status == AbsenceStatusEnum.active:
-            ab.status = AbsenceStatusEnum.voided
-
-    # Add or un-void absences in payload
-    for sid in absent_ids_set:
-        if sid in existing_absences:
-            ab = existing_absences[sid]
-            if ab.status == AbsenceStatusEnum.voided:
-                ab.status = AbsenceStatusEnum.active
-        else:
-            new_ab = Absence(
-                student_id=sid,
-                date=target_date,
-                submission_id=submission.id,
-                status=AbsenceStatusEnum.active,
-                reason_source=ReasonSourceEnum.teacher,
-            )
-            db.add(new_ab)
-
-            # Enqueue SMS for newly marked absent student
-            st_res = await db.execute(
-                select(Student).options(selectinload(Student.guardians)).where(Student.id == sid)
-            )
-            st = st_res.scalar_one_or_none()
-            if st and st.guardians:
-                # Find primary guardian
-                primary_link = await db.execute(
-                    select(student_guardians.c.guardian_id).where(
-                        student_guardians.c.student_id == sid,
-                        student_guardians.c.is_primary.is_(True),
-                    )
-                )
-                p_id = primary_link.scalar_one_or_none()
-                guardian = next((g for g in st.guardians if g.id == p_id), st.guardians[0])
-                if guardian and guardian.phone_e164 and not guardian.sms_opt_out:
-                    sms_body = (
-                        f"Muraho, {st.full_name} ntiyabonetse ku ishuri uyu munsi "
-                        f"({target_date.strftime('%d/%m')}). Kanda *384*1234# usobanure impamvu."
-                    )
-                    await enqueue_sms(
-                        db=db,
-                        to_e164=guardian.phone_e164,
-                        template_key="parent_absence",
-                        params={"child": st.full_name, "date": str(target_date)},
-                        body=sms_body,
-                        dedupe_key=f"absence:{st.id}:{target_date}",
-                        related_student_id=st.id,
-                    )
-
-    # 3. Create Audit Log
-    audit = AuditLog(
-        actor_user_id=current_user.id,
-        actor_role=current_user.role.value,
-        action="submit_attendance",
-        entity_type="attendance_submission",
-        entity_id=str(submission.id),
-        meta={
-            "class_id": str(class_id),
-            "date": str(target_date),
-            "absent_count": len(absent_ids_set),
-            "source": "dashboard",
-        },
-    )
-    db.add(audit)
-
-    # 4. Trigger dropout rules evaluation
-    for sid in absent_ids_set:
-        await evaluate_student(sid, db)
-
-    await db.commit()
-    await db.refresh(submission)
-    return submission
+        return submission
+    except AttendanceValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 
@@ -317,29 +207,17 @@ async def void_absence(
     if current_user.role == RoleEnum.head_teacher and student.school_id != current_user.school_id:
         raise HTTPException(status_code=403, detail="Cannot void absence for another school")
 
-    if absence.status == AbsenceStatusEnum.voided:
-        return {"status": "already_voided", "id": str(absence.id)}
-
-    absence.status = AbsenceStatusEnum.voided
-
-    # Update submission absent_count if linked
-    if absence.submission_id:
-        sub = await db.get(AttendanceSubmission, absence.submission_id)
-        if sub and sub.absent_count > 0:
-            sub.absent_count -= 1
-
-    audit = AuditLog(
-        actor_user_id=current_user.id,
-        actor_role=current_user.role.value,
-        action="void_absence",
-        entity_type="absence",
-        entity_id=str(absence.id),
-        meta={"student_id": str(absence.student_id), "date": str(absence.date)},
-    )
-    db.add(audit)
-
-    await db.commit()
-    return {"status": "voided", "id": str(absence.id)}
+    try:
+        return await void_absence_record(
+            db=db,
+            absence_id=absence_id,
+            actor_user_id=current_user.id,
+            actor_role=current_user.role.value,
+        )
+    except AttendanceNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except AttendanceValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get(

@@ -33,6 +33,11 @@ MESSAGES: dict[str, dict[LanguageEnum, str]] = {
         LanguageEnum.rw: "Ibyo uhisemo si byo.\n",
         LanguageEnum.fr: "Choix invalide.\n",
     },
+    "S_INVALID_INPUT": {
+        LanguageEnum.en: "Invalid input format. Please check and try again.",
+        LanguageEnum.rw: "Imyandikire ntiyemewe. Ongera ugerageze.",
+        LanguageEnum.fr: "Format de saisie invalide. Veuillez reessayer.",
+    },
     "T_PIN_SETUP1": {
         LanguageEnum.en: "Welcome to Garuka. Create a 4-digit PIN:",
         LanguageEnum.rw: "Murakaza neza muri Garuka. Shyiraho umubare w'ibanga w'imibare 4:",
@@ -167,6 +172,59 @@ MESSAGES: dict[str, dict[LanguageEnum, str]] = {
         LanguageEnum.en: "Visit saved. Thank you.",
         LanguageEnum.rw: "Isura yabitswe neza. Murakoze.",
         LanguageEnum.fr: "Visite enregistree. Merci.",
+    },
+    # ------------------------------------------------------------------
+    # Parent / Guardian screens
+    # ------------------------------------------------------------------
+    "P_CHILD": {
+        LanguageEnum.en: "Garuka\nChoose child:\n{lines}",
+        LanguageEnum.rw: "Garuka\nHagura umwana:\n{lines}",
+        LanguageEnum.fr: "Garuka\nChoisir enfant:\n{lines}",
+    },
+    "P_MENU": {
+        LanguageEnum.en: "Garuka - {child}\n1. Attendance\n2. Explain absence\n3. Ask for help\n4. Language",
+        LanguageEnum.rw: "Garuka - {child}\n1. Ibyihutsiro\n2. Sobanura kubonaneza\n3. Saba ubufasha\n4. Ururimi",
+        LanguageEnum.fr: "Garuka - {child}\n1. Presences\n2. Expliquer absence\n3. Demander aide\n4. Langue",
+    },
+    "P_ATT": {
+        LanguageEnum.en: "{child}: {n} absent day(s) last 30 days. Last: {last_date}.",
+        LanguageEnum.rw: "{child}: Yasibye amasaha {n} mu minsi 30 ishize. Ic'iherezo: {last_date}.",
+        LanguageEnum.fr: "{child}: {n} jour(s) absent ces 30 derniers jours. Dernier: {last_date}.",
+    },
+    "P_ATT_NONE": {
+        LanguageEnum.en: "{child}: No absences in the last 30 days.",
+        LanguageEnum.rw: "{child}: Nta kubonaneza mu minsi 30 ishize.",
+        LanguageEnum.fr: "{child}: Aucune absence ces 30 derniers jours.",
+    },
+    "P_ABS_PICK": {
+        LanguageEnum.en: "Which day to explain?\n{lines}",
+        LanguageEnum.rw: "Ni uwa ryari ushaka gusobanura?\n{lines}",
+        LanguageEnum.fr: "Quel jour expliquer?\n{lines}",
+    },
+    "P_ABS_NONE": {
+        LanguageEnum.en: "No absence needs an explanation.",
+        LanguageEnum.rw: "Nta kubonaneza bikeneye gusobanurwa.",
+        LanguageEnum.fr: "Aucune absence ne necessite d'explication.",
+    },
+    "P_REASON": {
+        LanguageEnum.en: "Reason:\n1. Sick\n2. Farm/house work\n3. Fees/materials\n4. Distance\n5. Other",
+        LanguageEnum.rw: "Impamvu:\n1. Uburwayi\n2. Akazi k'ubuhinzi/urugo\n3. Amafaranga/ibikoresho\n4. Uburebure\n5. Ikindi",
+        LanguageEnum.fr: "Motif:\n1. Malade\n2. Travail ferme/maison\n3. Frais/materiel\n4. Distance\n5. Autre",
+    },
+    "P_REASON_SAVED": {
+        LanguageEnum.en: "Thank you. Reason saved.",
+        LanguageEnum.rw: "Murakoze. Impamvu yabitswe.",
+        LanguageEnum.fr: "Merci. Motif enregistre.",
+    },
+    "P_HELP": {
+        LanguageEnum.en: "Main problem:\n1. Fees/materials\n2. Hunger\n3. Health\n4. Distance\n5. Family\n6. Other",
+        LanguageEnum.rw: "Inzitizi nyamukuru:\n1. Amafaranga/ibikoresho\n2. Inzara\n3. Ubuzima\n4. Uburebure\n5. Umuryango\n6. Ikindi",
+        LanguageEnum.fr: "Probleme principal:\n1. Frais/materiel\n2. Faim\n3. Sante\n4. Distance\n5. Famille\n6. Autre",
+    },
+    "P_HELP_SENT": {
+        LanguageEnum.en: "Request sent to the school. Someone will contact you.",
+        LanguageEnum.rw: "Ubusabe bwoherejwe ku ishuri. Bazakuvugana nawe.",
+        LanguageEnum.fr: "Demande envoyee a l'ecole. Quelqu'un vous contactera.",
     },
 }
 

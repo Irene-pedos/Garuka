@@ -86,6 +86,58 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
+        /** Update Me */
+        patch: operations["auth_update_me"];
+        trace?: never;
+    };
+    "/api/v1/auth/change-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change Password */
+        post: operations["auth_change_password"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/change-pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change Pin */
+        post: operations["auth_change_pin"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/avatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Avatar */
+        post: operations["auth_upload_avatar"];
+        delete?: never;
+        options?: never;
+        head?: never;
         patch?: never;
         trace?: never;
     };
@@ -299,6 +351,349 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/classes/{class_id}/attendance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get attendance and student list for class on date */
+        get: operations["get_class_attendance"];
+        put?: never;
+        /** Submit or update attendance for class on date */
+        post: operations["submit_class_attendance"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/absences/{absence_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Void an absence record */
+        delete: operations["void_absence"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attendance/compliance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get class compliance grid for school and date range */
+        get: operations["get_attendance_compliance"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Cases */
+        get: operations["list_cases"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cases/{case_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Case Detail */
+        get: operations["get_case_detail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cases/{case_id}/assign": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Assign Case Mentor */
+        patch: operations["assign_case_mentor"];
+        trace?: never;
+    };
+    "/api/v1/cases/{case_id}/escalate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Escalate Case */
+        post: operations["escalate_case"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cases/{case_id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Case Note */
+        post: operations["add_case_note"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cases/{case_id}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Resolve Case */
+        post: operations["resolve_case"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/help-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Help Requests */
+        get: operations["list_help_requests"];
+        put?: never;
+        /** Create Help Request */
+        post: operations["create_help_request"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/help-requests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Help Request Status */
+        patch: operations["update_help_request_status"];
+        trace?: never;
+    };
+    "/api/v1/mentors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Mentors */
+        get: operations["list_mentors"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analytics/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Analytics Overview */
+        get: operations["get_analytics_overview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analytics/trends": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Attendance Trends */
+        get: operations["get_attendance_trends"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analytics/schools-compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Compare Schools */
+        get: operations["compare_schools"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get App Settings */
+        get: operations["get_app_settings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update App Settings */
+        patch: operations["update_app_settings"];
+        trace?: never;
+    };
+    "/api/v1/sms/outbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Sms Outbox */
+        get: operations["list_sms_outbox"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sms/outbox/{id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retry Sms Outbox */
+        post: operations["retry_sms_outbox"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Audit Logs */
+        get: operations["list_audit_logs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/webhooks/at/sms-delivery/{secret}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Africa's Talking SMS Delivery Report Webhook */
+        post: operations["sms_delivery_callback_api_v1_webhooks_at_sms_delivery__secret__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/ussd/{secret}": {
         parameters: {
             query?: never;
@@ -321,10 +716,197 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/dev/ussd": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dev USSD Simulator endpoint
+         * @description Dev-only USSD endpoint simulating Africa's Talking webhook.
+         */
+        post: operations["dev_ussd_simulator"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /**
+         * AbsenceStatusEnum
+         * @enum {string}
+         */
+        AbsenceStatusEnum: "active" | "voided";
+        /** ActiveTermInfo */
+        ActiveTermInfo: {
+            /** Academic Year */
+            academic_year: number;
+            /** Term No */
+            term_no: number;
+            /** Name */
+            name: string;
+        };
+        /** AnalyticsOverviewResponse */
+        AnalyticsOverviewResponse: {
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            /**
+             * Timezone
+             * @default Africa/Kigali (UTC+2)
+             */
+            timezone: string;
+            /** Kigali Today */
+            kigali_today: string;
+            scope: components["schemas"]["ScopeInfo"];
+            kpis: components["schemas"]["OverviewKPIs"];
+            /** Cases By Level */
+            cases_by_level?: {
+                [key: string]: number;
+            };
+            active_term?: components["schemas"]["ActiveTermInfo"] | null;
+            /** Overdue Cases */
+            overdue_cases?: components["schemas"]["OverdueCaseItem"][];
+            /** Reporting Gaps */
+            reporting_gaps?: components["schemas"]["ReportingGapItem"][];
+            /** Classes Missing Today */
+            classes_missing_today?: components["schemas"]["MissingClassItem"][];
+            /** Recent Escalations */
+            recent_escalations?: components["schemas"]["RecentEscalationItem"][];
+            /** Pending Help Requests */
+            pending_help_requests?: components["schemas"]["PendingHelpRequestItem"][];
+            /** Attendance Trend */
+            attendance_trend?: components["schemas"]["DailyAttendanceTrendItem"][];
+        };
+        /** AppSettingsRead */
+        AppSettingsRead: {
+            /** Rule Consecutive Days */
+            rule_consecutive_days: number;
+            /** Rule Monthly Absences */
+            rule_monthly_absences: number;
+            /** Rule Escalate Term Absences */
+            rule_escalate_term_absences: number;
+            /** Rule Visit Sla School Days */
+            rule_visit_sla_school_days: number;
+            /** Rule Return Streak School Days */
+            rule_return_streak_school_days: number;
+            /** Rule District Escalation Days */
+            rule_district_escalation_days: number;
+            /** Mentor Max Active Cases */
+            mentor_max_active_cases: number;
+            /** Sms Quiet Hours Start */
+            sms_quiet_hours_start: string;
+            /** Sms Quiet Hours End */
+            sms_quiet_hours_end: string;
+            /** Updated At */
+            updated_at?: string | null;
+        };
+        /** AppSettingsUpdate */
+        AppSettingsUpdate: {
+            /** Rule Consecutive Days */
+            rule_consecutive_days?: number | null;
+            /** Rule Monthly Absences */
+            rule_monthly_absences?: number | null;
+            /** Rule Escalate Term Absences */
+            rule_escalate_term_absences?: number | null;
+            /** Rule Visit Sla School Days */
+            rule_visit_sla_school_days?: number | null;
+            /** Rule Return Streak School Days */
+            rule_return_streak_school_days?: number | null;
+            /** Rule District Escalation Days */
+            rule_district_escalation_days?: number | null;
+            /** Mentor Max Active Cases */
+            mentor_max_active_cases?: number | null;
+            /** Sms Quiet Hours Start */
+            sms_quiet_hours_start?: string | null;
+            /** Sms Quiet Hours End */
+            sms_quiet_hours_end?: string | null;
+        };
+        /** AttendanceSubmissionResponse */
+        AttendanceSubmissionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Class Id
+             * Format: uuid
+             */
+            class_id: string;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Submitted By
+             * Format: uuid
+             */
+            submitted_by: string;
+            source: components["schemas"]["SubmissionSourceEnum"];
+            /** Absent Count */
+            absent_count: number;
+            /**
+             * Submitted At
+             * Format: date-time
+             */
+            submitted_at: string;
+        };
+        /** AuditLogListItem */
+        AuditLogListItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Actor User Id */
+            actor_user_id?: string | null;
+            /** Actor Role */
+            actor_role: string;
+            /** Action */
+            action: string;
+            /** Entity Type */
+            entity_type: string;
+            /** Entity Id */
+            entity_id?: string | null;
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** AvatarUploadResponse */
+        AvatarUploadResponse: {
+            /** Avatar Url */
+            avatar_url: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * BarrierCodeEnum
+         * @enum {string}
+         */
+        BarrierCodeEnum: "COST" | "HUNGER" | "HEALTH" | "DISTANCE" | "FAMILY" | "OTHER";
+        /** Body_auth_upload_avatar */
+        Body_auth_upload_avatar: {
+            /** File */
+            file: string;
+        };
         /** Body_handle_ussd_callback */
         Body_handle_ussd_callback: {
             /**
@@ -358,6 +940,19 @@ export interface components {
             /** File */
             file: string;
         };
+        /** Body_sms_delivery_callback_api_v1_webhooks_at_sms_delivery__secret__post */
+        Body_sms_delivery_callback_api_v1_webhooks_at_sms_delivery__secret__post: {
+            /** Id */
+            id: string;
+            /** Status */
+            status: string;
+            /** Phonenumber */
+            phoneNumber?: string | null;
+            /** Networkcode */
+            networkCode?: string | null;
+            /** Failurereason */
+            failureReason?: string | null;
+        };
         /** CSVImportResult */
         CSVImportResult: {
             /** Created */
@@ -375,6 +970,261 @@ export interface components {
             row: number;
             /** Message */
             message: string;
+        };
+        /** CaseAssignRequest */
+        CaseAssignRequest: {
+            /**
+             * Mentor Id
+             * Format: uuid
+             */
+            mentor_id: string;
+        };
+        /** CaseDetail */
+        CaseDetail: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Ref */
+            ref: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+            /** Student Gender */
+            student_gender?: string | null;
+            /** Class Name */
+            class_name?: string | null;
+            /**
+             * School Id
+             * Format: uuid
+             */
+            school_id: string;
+            /** School Name */
+            school_name: string;
+            /** Sector Name */
+            sector_name?: string | null;
+            /** Status */
+            status: string;
+            /** Level */
+            level: number;
+            /** Trigger */
+            trigger: string;
+            /** Risk Score */
+            risk_score: number;
+            /** Mentor Id */
+            mentor_id?: string | null;
+            /** Mentor Name */
+            mentor_name?: string | null;
+            /**
+             * Opened At
+             * Format: date-time
+             */
+            opened_at: string;
+            /** Resolved At */
+            resolved_at?: string | null;
+            /** Sla Deadline */
+            sla_deadline?: string | null;
+            /**
+             * Sla Breached
+             * @default false
+             */
+            sla_breached: boolean;
+            /** Parent Name */
+            parent_name?: string | null;
+            /** Parent Phone */
+            parent_phone?: string | null;
+            metrics?: components["schemas"]["CaseMetrics"];
+            /** Absence Heatmap */
+            absence_heatmap?: {
+                [key: string]: unknown;
+            }[];
+            /** Visits */
+            visits?: components["schemas"]["MentorVisitRead"][];
+            /** Events */
+            events?: components["schemas"]["CaseEventRead"][];
+        };
+        /** CaseEscalateRequest */
+        CaseEscalateRequest: {
+            /** To Level */
+            to_level: number;
+            /** Note */
+            note?: string | null;
+        };
+        /** CaseEventRead */
+        CaseEventRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /** Type */
+            type: string;
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Payload */
+            payload?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** CaseListItem */
+        CaseListItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Ref */
+            ref: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+            /** Student Gender */
+            student_gender?: string | null;
+            /** Class Name */
+            class_name?: string | null;
+            /**
+             * School Id
+             * Format: uuid
+             */
+            school_id: string;
+            /** School Name */
+            school_name: string;
+            /** Sector Name */
+            sector_name?: string | null;
+            /** Status */
+            status: string;
+            /** Level */
+            level: number;
+            /** Trigger */
+            trigger: string;
+            /** Risk Score */
+            risk_score: number;
+            /** Mentor Id */
+            mentor_id?: string | null;
+            /** Mentor Name */
+            mentor_name?: string | null;
+            /**
+             * Opened At
+             * Format: date-time
+             */
+            opened_at: string;
+            /** Resolved At */
+            resolved_at?: string | null;
+            /** Sla Deadline */
+            sla_deadline?: string | null;
+            /**
+             * Sla Breached
+             * @default false
+             */
+            sla_breached: boolean;
+        };
+        /** CaseMetrics */
+        CaseMetrics: {
+            /**
+             * Consecutive Absences
+             * @default 0
+             */
+            consecutive_absences: number;
+            /**
+             * Monthly Absences
+             * @default 0
+             */
+            monthly_absences: number;
+            /**
+             * Term Absences
+             * @default 0
+             */
+            term_absences: number;
+            /**
+             * Return Streak
+             * @default 0
+             */
+            return_streak: number;
+        };
+        /** CaseNoteRequest */
+        CaseNoteRequest: {
+            /** Text */
+            text: string;
+        };
+        /** CaseResolveRequest */
+        CaseResolveRequest: {
+            /** Outcome */
+            outcome: string;
+            /** Note */
+            note?: string | null;
+        };
+        /**
+         * CaseStatusEnum
+         * @enum {string}
+         */
+        CaseStatusEnum: "open" | "mentor_assigned" | "visited" | "escalated_sector" | "escalated_district" | "resolved_returned" | "closed_moved" | "closed_other";
+        /** ChangePasswordRequest */
+        ChangePasswordRequest: {
+            /** Current Password */
+            current_password: string;
+            /** New Password */
+            new_password: string;
+        };
+        /** ChangePinRequest */
+        ChangePinRequest: {
+            /** Current Pin */
+            current_pin?: string | null;
+            /** New Pin */
+            new_pin: string;
+        };
+        /** ClassAttendanceResponse */
+        ClassAttendanceResponse: {
+            /**
+             * Class Id
+             * Format: uuid
+             */
+            class_id: string;
+            /** Class Name */
+            class_name: string;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            submission?: components["schemas"]["AttendanceSubmissionResponse"] | null;
+            /**
+             * Students
+             * @default []
+             */
+            students: components["schemas"]["StudentAttendanceItem"][];
+        };
+        /** ClassCompliance */
+        ClassCompliance: {
+            /**
+             * Class Id
+             * Format: uuid
+             */
+            class_id: string;
+            /** Class Name */
+            class_name: string;
+            /** Grade */
+            grade: number;
+            /** Days */
+            days: components["schemas"]["DayCompliance"][];
         };
         /** ClassCreate */
         ClassCreate: {
@@ -424,6 +1274,54 @@ export interface components {
          * @enum {string}
          */
         ConsentSourceEnum: "school_form" | "ussd" | "dashboard";
+        /** DailyAttendanceTrendItem */
+        DailyAttendanceTrendItem: {
+            /** Date */
+            date: string;
+            /** Present */
+            present: number;
+            /** Absent */
+            absent: number;
+            /** Enrolled */
+            enrolled: number;
+            /**
+             * Cases
+             * @default 0
+             */
+            cases: number;
+        };
+        /** DayCompliance */
+        DayCompliance: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Status */
+            status: string;
+            /** Absent Count */
+            absent_count?: number | null;
+        };
+        /** DevUssdRequest */
+        DevUssdRequest: {
+            /** Phonenumber */
+            phoneNumber: string;
+            /**
+             * Text
+             * @default
+             */
+            text: string;
+            /**
+             * Sessionid
+             * @default dev-session-1
+             */
+            sessionId: string;
+            /**
+             * Servicecode
+             * @default *384*1234#
+             */
+            serviceCode: string | null;
+        };
         /** DistrictCreate */
         DistrictCreate: {
             /** Name */
@@ -488,6 +1386,71 @@ export interface components {
             /** Version */
             version: string;
         };
+        /** HelpRequestCreate */
+        HelpRequestCreate: {
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Guardian Id */
+            guardian_id?: string | null;
+            barrier_code: components["schemas"]["BarrierCodeEnum"];
+            /**
+             * Consent
+             * @default true
+             */
+            consent: boolean;
+        };
+        /** HelpRequestListItem */
+        HelpRequestListItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Student Id
+             * Format: uuid
+             */
+            student_id: string;
+            /** Student Name */
+            student_name: string;
+            /** Class Name */
+            class_name?: string | null;
+            /**
+             * School Id
+             * Format: uuid
+             */
+            school_id: string;
+            /** School Name */
+            school_name: string;
+            /**
+             * Guardian Id
+             * Format: uuid
+             */
+            guardian_id: string;
+            /** Guardian Name */
+            guardian_name: string;
+            /** Guardian Phone */
+            guardian_phone: string;
+            barrier_code: components["schemas"]["BarrierCodeEnum"];
+            status: components["schemas"]["HelpRequestStatusEnum"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * HelpRequestStatusEnum
+         * @enum {string}
+         */
+        HelpRequestStatusEnum: "new" | "seen" | "in_progress" | "closed";
+        /** HelpRequestUpdate */
+        HelpRequestUpdate: {
+            status: components["schemas"]["HelpRequestStatusEnum"];
+        };
         /**
          * LanguageEnum
          * @enum {string}
@@ -503,10 +1466,234 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** MentorRead */
+        MentorRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+            /** Email */
+            email?: string | null;
+            /** Phone E164 */
+            phone_e164: string;
+            /** Sector Id */
+            sector_id?: string | null;
+            /** Sector Name */
+            sector_name?: string | null;
+            /**
+             * Active Cases
+             * @default 0
+             */
+            active_cases: number;
+            /**
+             * Visits 30D
+             * @default 0
+             */
+            visits_30d: number;
+            /**
+             * Verified Rate
+             * @default 0
+             */
+            verified_rate: number;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+        };
+        /** MentorVisitRead */
+        MentorVisitRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Case Id
+             * Format: uuid
+             */
+            case_id: string;
+            /**
+             * Mentor Id
+             * Format: uuid
+             */
+            mentor_id: string;
+            /** Mentor Name */
+            mentor_name?: string | null;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Verified */
+            verified: boolean;
+            /** Verified Method */
+            verified_method: string;
+            /** Outcome */
+            outcome: string;
+            /** Barrier Code */
+            barrier_code?: string | null;
+            /** Notes */
+            notes?: string | null;
+        };
+        /** MissingClassItem */
+        MissingClassItem: {
+            /**
+             * Class Id
+             * Format: uuid
+             */
+            class_id: string;
+            /** Class Name */
+            class_name: string;
+            /** School Name */
+            school_name: string;
+        };
+        /** OverdueCaseItem */
+        OverdueCaseItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Ref */
+            ref: string;
+            /** Student Name */
+            student_name: string;
+            /** School Name */
+            school_name: string;
+            /** Level */
+            level: number;
+            /**
+             * Opened At
+             * Format: date-time
+             */
+            opened_at: string;
+            /** Days Open */
+            days_open: number;
+        };
+        /** OverviewKPIs */
+        OverviewKPIs: {
+            /**
+             * Students Active
+             * @default 0
+             */
+            students_active: number;
+            /**
+             * Absent Today
+             * @default 0
+             */
+            absent_today: number;
+            /**
+             * Open Cases
+             * @default 0
+             */
+            open_cases: number;
+            /**
+             * New Cases 7D
+             * @default 0
+             */
+            new_cases_7d: number;
+            /**
+             * Visits Overdue
+             * @default 0
+             */
+            visits_overdue: number;
+            /**
+             * Returned 30D
+             * @default 0
+             */
+            returned_30d: number;
+            /**
+             * Attendance Compliance Pct
+             * @default 0
+             */
+            attendance_compliance_pct: number;
+            /**
+             * Classes Missing Today
+             * @default 0
+             */
+            classes_missing_today: number;
+            /**
+             * Recent Escalations Count
+             * @default 0
+             */
+            recent_escalations_count: number;
+            /**
+             * Pending Help Requests Count
+             * @default 0
+             */
+            pending_help_requests_count: number;
+            /**
+             * Mentor Cases Active
+             * @default 0
+             */
+            mentor_cases_active: number;
+        };
+        /** PendingHelpRequestItem */
+        PendingHelpRequestItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Student Name */
+            student_name: string;
+            /** School Name */
+            school_name: string;
+            /** Barrier Code */
+            barrier_code: string;
+            /** Status */
+            status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /**
+         * ReasonCodeEnum
+         * @enum {string}
+         */
+        ReasonCodeEnum: "SICK" | "WORK" | "COST" | "DISTANCE" | "OTHER";
+        /** RecentEscalationItem */
+        RecentEscalationItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Ref */
+            ref: string;
+            /** Student Name */
+            student_name: string;
+            /** School Name */
+            school_name: string;
+            /** Level */
+            level: number;
+            /** Status */
+            status: string;
+            /**
+             * Escalated At
+             * Format: date-time
+             */
+            escalated_at: string;
+        };
         /** RefreshTokenRequest */
         RefreshTokenRequest: {
             /** Refresh Token */
             refresh_token: string;
+        };
+        /** ReportingGapItem */
+        ReportingGapItem: {
+            /** Class Name */
+            class_name: string;
+            /** School Name */
+            school_name: string;
+            /** Missing Dates */
+            missing_dates?: string[];
         };
         /** ResetPinResponse */
         ResetPinResponse: {
@@ -523,6 +1710,72 @@ export interface components {
          * @enum {string}
          */
         RoleEnum: "admin" | "district_director" | "sector_officer" | "head_teacher" | "teacher" | "mentor";
+        /** SchoolCompareItem */
+        SchoolCompareItem: {
+            /**
+             * School Id
+             * Format: uuid
+             */
+            school_id: string;
+            /** School Name */
+            school_name: string;
+            /** Sector Name */
+            sector_name: string;
+            /**
+             * Students Active
+             * @default 0
+             */
+            students_active: number;
+            /**
+             * Absent Today
+             * @default 0
+             */
+            absent_today: number;
+            /**
+             * Absence Rate Pct
+             * @default 0
+             */
+            absence_rate_pct: number;
+            /**
+             * Open Cases
+             * @default 0
+             */
+            open_cases: number;
+            /**
+             * Returned 30D
+             * @default 0
+             */
+            returned_30d: number;
+            /**
+             * Attendance Compliance Pct
+             * @default 0
+             */
+            attendance_compliance_pct: number;
+        };
+        /** SchoolComplianceResponse */
+        SchoolComplianceResponse: {
+            /**
+             * School Id
+             * Format: uuid
+             */
+            school_id: string;
+            /** School Name */
+            school_name: string;
+            /**
+             * From Date
+             * Format: date
+             */
+            from_date: string;
+            /**
+             * To Date
+             * Format: date
+             */
+            to_date: string;
+            /** Compliance Pct */
+            compliance_pct: number;
+            /** Classes */
+            classes: components["schemas"]["ClassCompliance"][];
+        };
         /** SchoolCreate */
         SchoolCreate: {
             /**
@@ -572,6 +1825,13 @@ export interface components {
             /** Is Active */
             is_active?: boolean | null;
         };
+        /** ScopeInfo */
+        ScopeInfo: {
+            /** Level */
+            level: string;
+            /** Name */
+            name: string;
+        };
         /** SectorCreate */
         SectorCreate: {
             /**
@@ -602,6 +1862,55 @@ export interface components {
          * @enum {string}
          */
         SexEnum: "F" | "M";
+        /** SmsOutboxListItem */
+        SmsOutboxListItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** To E164 */
+            to_e164: string;
+            /** Template Key */
+            template_key: string;
+            /** Body */
+            body: string;
+            status: components["schemas"]["SmsStatusEnum"];
+            /** Attempts */
+            attempts: number;
+            /** Last Error */
+            last_error?: string | null;
+            /**
+             * Scheduled At
+             * Format: date-time
+             */
+            scheduled_at: string;
+            /** Sent At */
+            sent_at?: string | null;
+        };
+        /**
+         * SmsStatusEnum
+         * @enum {string}
+         */
+        SmsStatusEnum: "pending" | "sent" | "delivered" | "failed" | "skipped";
+        /** StudentAttendanceItem */
+        StudentAttendanceItem: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Roll Number */
+            roll_number: number;
+            /** Full Name */
+            full_name: string;
+            /** Is Absent */
+            is_absent: boolean;
+            /** Absence Id */
+            absence_id?: string | null;
+            reason_code?: components["schemas"]["ReasonCodeEnum"] | null;
+            status?: components["schemas"]["AbsenceStatusEnum"] | null;
+        };
         /** StudentCreate */
         StudentCreate: {
             /**
@@ -678,6 +1987,24 @@ export interface components {
          * @enum {string}
          */
         StudentStatusEnum: "active" | "transferred" | "dropped_out" | "graduated";
+        /**
+         * SubmissionSourceEnum
+         * @enum {string}
+         */
+        SubmissionSourceEnum: "ussd" | "dashboard";
+        /** SubmitAttendanceRequest */
+        SubmitAttendanceRequest: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Absent Student Ids
+             * @default []
+             */
+            absent_student_ids: string[];
+        };
         /** TokenResponse */
         TokenResponse: {
             /** Access Token */
@@ -690,6 +2017,16 @@ export interface components {
              */
             token_type: string;
             user: components["schemas"]["UserMeResponse"];
+        };
+        /** UpdateProfileRequest */
+        UpdateProfileRequest: {
+            /** Full Name */
+            full_name?: string | null;
+            /** Avatar Url */
+            avatar_url?: string | null;
+            language?: components["schemas"]["LanguageEnum"] | null;
+            /** Phone E164 */
+            phone_e164?: string | null;
         };
         /** UserCreate */
         UserCreate: {
@@ -722,16 +2059,26 @@ export interface components {
             email?: string | null;
             /** Full Name */
             full_name: string;
+            /** Avatar Url */
+            avatar_url?: string | null;
             role: components["schemas"]["RoleEnum"];
             language: components["schemas"]["LanguageEnum"];
             /** Phone Masked */
             phone_masked?: string | null;
+            /** Phone E164 */
+            phone_e164?: string | null;
             /** School Id */
             school_id?: string | null;
             /** Sector Id */
             sector_id?: string | null;
             /** District Id */
             district_id?: string | null;
+            /** School Name */
+            school_name?: string | null;
+            /** Sector Name */
+            sector_name?: string | null;
+            /** District Name */
+            district_name?: string | null;
             /** Is Active */
             is_active: boolean;
         };
@@ -921,6 +2268,138 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserMeResponse"];
+                };
+            };
+        };
+    };
+    auth_update_me: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserMeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    auth_change_password: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePasswordRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    auth_change_pin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangePinRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    auth_upload_avatar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_auth_upload_avatar"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AvatarUploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1513,6 +2992,734 @@ export interface operations {
             };
         };
     };
+    get_class_attendance: {
+        parameters: {
+            query?: {
+                date?: string | null;
+            };
+            header?: never;
+            path: {
+                class_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClassAttendanceResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_class_attendance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                class_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitAttendanceRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AttendanceSubmissionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    void_absence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                absence_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_attendance_compliance: {
+        parameters: {
+            query: {
+                school_id: string;
+                from?: string | null;
+                to?: string | null;
+                format?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchoolComplianceResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_cases: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["CaseStatusEnum"] | null;
+                level?: number | null;
+                school_id?: string | null;
+                sector_id?: string | null;
+                mentor_id?: string | null;
+                q?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseListItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_case_detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assign_case_mentor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaseAssignRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    escalate_case: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaseEscalateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_case_note: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaseNoteRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resolve_case: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                case_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CaseResolveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CaseDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_help_requests: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["HelpRequestStatusEnum"] | null;
+                school_id?: string | null;
+                barrier_code?: components["schemas"]["BarrierCodeEnum"] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HelpRequestListItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_help_request: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HelpRequestCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HelpRequestListItem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_help_request_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HelpRequestUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HelpRequestListItem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_mentors: {
+        parameters: {
+            query?: {
+                sector_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MentorRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_analytics_overview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalyticsOverviewResponse"];
+                };
+            };
+        };
+    };
+    get_attendance_trends: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailyAttendanceTrendItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    compare_schools: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SchoolCompareItem"][];
+                };
+            };
+        };
+    };
+    get_app_settings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppSettingsRead"];
+                };
+            };
+        };
+    };
+    update_app_settings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AppSettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AppSettingsRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sms_outbox: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["SmsStatusEnum"] | null;
+                template_key?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SmsOutboxListItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retry_sms_outbox: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SmsOutboxListItem"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_audit_logs: {
+        parameters: {
+            query?: {
+                action?: string | null;
+                entity_type?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditLogListItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sms_delivery_callback_api_v1_webhooks_at_sms_delivery__secret__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                secret: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/x-www-form-urlencoded": components["schemas"]["Body_sms_delivery_callback_api_v1_webhooks_at_sms_delivery__secret__post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     handle_ussd_callback: {
         parameters: {
             query?: never;
@@ -1525,6 +3732,39 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/x-www-form-urlencoded": components["schemas"]["Body_handle_ussd_callback"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dev_ussd_simulator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DevUssdRequest"];
             };
         };
         responses: {

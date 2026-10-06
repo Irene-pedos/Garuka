@@ -22,7 +22,7 @@ from app.models.base import Base, TimestampMixin, UUIDMixin, utc_now
 
 if TYPE_CHECKING:
     from app.models.geo import School
-    from app.models.student import Student
+    from app.models.student import Guardian, Student
     from app.models.user import User
 
 
@@ -246,3 +246,6 @@ class HelpRequest(Base, UUIDMixin, TimestampMixin):
         nullable=False,
         index=True,
     )
+
+    student: Mapped["Student"] = relationship("Student")
+    guardian: Mapped["Guardian"] = relationship("Guardian")

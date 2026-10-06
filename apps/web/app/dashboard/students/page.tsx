@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { fetchStudents, uploadStudentsCSV } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
+import { AccessibleModal } from "@/components/ui/modal";
+import { ScopeHeader } from "@/components/scope-header";
+import { Upload, Download, RefreshCw, AlertTriangle } from "lucide-react";
 
 interface StudentItem {
   id: string;
@@ -26,11 +29,13 @@ export default function StudentsPage() {
   const [students, setStudents] = useState<StudentItem[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // CSV Import State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [importLoading, setImportLoading] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
   const [importResult, setImportResult] = useState<{
     created: number;
     updated: number;
@@ -38,21 +43,29 @@ export default function StudentsPage() {
     errors: Array<{ row: number; message: string }>;
   } | null>(null);
 
-  const loadStudents = () => {
+  const loadStudents = (signal?: AbortSignal) => {
     setLoading(true);
-    fetchStudents({ q: search || undefined })
+    setFetchError(null);
+    fetchStudents({ q: search || undefined }, signal)
       .then((data) => setStudents(data as StudentItem[]))
-      .catch((err) => console.error(err))
+      .catch((err) => {
+        if (err.name !== "AbortError") {
+          setFetchError(err.message || "Failed to load students");
+        }
+      })
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    loadStudents();
+    const controller = new AbortController();
+    loadStudents(controller.signal);
+    return () => controller.abort();
   }, [search]);
 
   const handleImport = async (dryRun: boolean) => {
     if (!file) return;
     setImportLoading(true);
+    setImportError(null);
     setImportResult(null);
     try {
       const res = await uploadStudentsCSV(file, user?.school_id || undefined, dryRun);
@@ -61,7 +74,7 @@ export default function StudentsPage() {
         loadStudents();
       }
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Import failed");
+      setImportError(err instanceof Error ? err.message : "Import failed");
     } finally {
       setImportLoading(false);
     }
@@ -84,79 +97,149 @@ export default function StudentsPage() {
 
   return (
     <div className="space-y-6 max-w-6xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Students</h1>
-          <p className="text-sm text-muted-foreground">Manage enrolled students and guardian contact links</p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={downloadCSVTemplate}>
-            Download Template
-          </Button>
-          <Button onClick={() => setIsModalOpen(true)}>Import Students (CSV)</Button>
-        </div>
-      </div>
+      <ScopeHeader
+        title="Students Directory"
+        description="View enrolled pupils, guardian contact linkages, and bulk CSV enrollment."
+        scope={
+          user
+            ? {
+                level:
+                  user.role === "admin"
+                    ? "national"
+                    : user.role === "district_director"
+                    ? "district"
+                    : user.role === "sector_officer"
+                    ? "sector"
+                    : "school",
+                name: user.full_name,
+              }
+            : undefined
+        }
+      >
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => loadStudents()}
+          disabled={loading}
+        >
+          <RefreshCw className={`h-4 w-4 mr-1.5 ${loading ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
+        <Button variant="outline" size="sm" onClick={downloadCSVTemplate}>
+          <Download className="h-4 w-4 mr-1.5" />
+          Template
+        </Button>
+        <Button
+          size="sm"
+          onClick={() => {
+            setIsModalOpen(true);
+            setImportError(null);
+            setImportResult(null);
+          }}
+        >
+          <Upload className="h-4 w-4 mr-1.5" />
+          Import CSV
+        </Button>
+      </ScopeHeader>
 
+      {fetchError && (
+        <div
+          role="alert"
+          className="p-4 bg-destructive/15 border border-destructive/20 text-destructive rounded-lg flex items-center justify-between"
+        >
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span>{fetchError}</span>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => loadStudents()}>
+            Retry
+          </Button>
+        </div>
+      )}
+
+      {/* Search Input */}
       <div className="flex items-center gap-4">
         <input
           type="text"
-          placeholder="Search by student name or SDMS code..."
+          placeholder="Search by student or guardian name..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm px-3 py-2 border rounded-md text-sm bg-background w-full focus:outline-none focus:ring-2 focus:ring-primary"
+          className="max-w-sm w-full px-3 py-2 border rounded-md text-sm bg-background focus:outline-hidden focus:ring-2 focus:ring-primary"
         />
       </div>
 
-      <div className="border rounded-xl bg-card overflow-hidden shadow-sm">
+      {/* Table */}
+      <div className="border rounded-xl bg-card overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
-            <thead className="bg-muted text-muted-foreground uppercase text-xs border-b">
+            <thead className="bg-muted/50 border-b text-xs uppercase text-muted-foreground font-semibold">
               <tr>
-                <th className="px-4 py-3">Roll</th>
-                <th className="px-4 py-3">Full Name</th>
-                <th className="px-4 py-3">Class</th>
-                <th className="px-4 py-3">SDMS Code</th>
-                <th className="px-4 py-3">Sex / Year</th>
-                <th className="px-4 py-3">Primary Guardian</th>
-                <th className="px-4 py-3">Status</th>
+                <th className="px-6 py-4">Roll</th>
+                <th className="px-6 py-4">Student Name</th>
+                <th className="px-6 py-4">Class</th>
+                <th className="px-6 py-4">Birth Year</th>
+                <th className="px-6 py-4">Primary Guardian</th>
+                <th className="px-6 py-4">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-8 text-muted-foreground">
-                    Loading students...
+                  <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground animate-pulse">
+                    Loading student records...
                   </td>
                 </tr>
               ) : students.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="text-center py-8 text-muted-foreground">
-                    No students found. Use &quot;Import Students&quot; to load classes.
+                  <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
+                    No students found. Use "Import CSV" to enroll your class rosters.
                   </td>
                 </tr>
               ) : (
-                students.map((s) => (
-                  <tr key={s.id} className="hover:bg-muted/30">
-                    <td className="px-4 py-3 font-mono font-medium">{s.roll_number}</td>
-                    <td className="px-4 py-3 font-semibold text-foreground">{s.full_name}</td>
-                    <td className="px-4 py-3 font-medium text-primary">{s.class_name || "—"}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{s.student_code || "—"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">
-                      {s.sex || "—"} {s.birth_year ? `(${s.birth_year})` : ""}
+                students.map((student) => (
+                  <tr key={student.id} className="hover:bg-muted/20">
+                    <td className="px-6 py-4 font-mono text-muted-foreground text-xs">
+                      #{student.roll_number}
                     </td>
-                    <td className="px-4 py-3">
-                      {s.guardians && s.guardians.length > 0 ? (
-                        <div>
-                          <p className="font-medium">{s.guardians[0].full_name}</p>
-                          <p className="text-xs font-mono text-muted-foreground">{s.guardians[0].phone_masked}</p>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground text-xs italic">No guardian linked</span>
+                    <td className="px-6 py-4 font-medium text-foreground">
+                      {student.full_name}
+                      {student.student_code && (
+                        <span className="block text-xs font-mono text-muted-foreground">
+                          {student.student_code}
+                        </span>
                       )}
                     </td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                        {s.status}
+                    <td className="px-6 py-4 text-muted-foreground">
+                      {student.class_name || "—"}
+                    </td>
+                    <td className="px-6 py-4 text-muted-foreground font-mono text-xs">
+                      {student.birth_year || "—"}
+                    </td>
+                    <td className="px-6 py-4">
+                      {student.guardians.length > 0 ? (
+                        <div>
+                          <p className="text-foreground text-xs font-medium">
+                            {student.guardians[0].full_name}
+                          </p>
+                          <p className="text-muted-foreground font-mono text-xs">
+                            {student.guardians[0].phone_masked}
+                          </p>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-amber-600 font-medium">
+                          No guardian linked
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          student.status === "active"
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {student.status}
                       </span>
                     </td>
                   </tr>
@@ -167,79 +250,101 @@ export default function StudentsPage() {
         </div>
       </div>
 
-      {/* CSV Import Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-card border rounded-xl max-w-lg w-full p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b pb-3">
-              <h2 className="font-bold text-lg">CSV Student Import Wizard</h2>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-muted-foreground hover:text-foreground text-sm"
-              >
-                ✕
-              </button>
+      {/* Accessible CSV Import Modal */}
+      <AccessibleModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setImportError(null);
+        }}
+        title="CSV Student Import Wizard"
+        description="Upload your standard school roster CSV file."
+        maxWidth="lg"
+      >
+        <div className="space-y-4">
+          {importError && (
+            <div
+              role="alert"
+              className="p-3 bg-destructive/15 border border-destructive/20 text-destructive rounded text-xs font-medium flex items-center gap-1.5"
+            >
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span>{importError}</span>
             </div>
+          )}
 
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Upload standard format CSV. Columns required: <code className="bg-muted px-1 rounded">full_name</code>,{" "}
-              <code className="bg-muted px-1 rounded">class_name</code>,{" "}
-              <code className="bg-muted px-1 rounded">roll_number</code>,{" "}
-              <code className="bg-muted px-1 rounded">guardian_name</code>,{" "}
-              <code className="bg-muted px-1 rounded">guardian_phone</code>.
-            </p>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Columns required: <code className="bg-muted px-1 rounded">full_name</code>,{" "}
+            <code className="bg-muted px-1 rounded">class_name</code>,{" "}
+            <code className="bg-muted px-1 rounded">roll_number</code>,{" "}
+            <code className="bg-muted px-1 rounded">guardian_name</code>,{" "}
+            <code className="bg-muted px-1 rounded">guardian_phone</code>.
+          </p>
 
-            <div className="border border-dashed rounded-lg p-6 text-center space-y-2">
-              <input
-                type="file"
-                accept=".csv"
-                onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
-                className="text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground hover:file:opacity-90"
-              />
-              {file && <p className="text-xs font-mono text-emerald-600 font-medium">Selected: {file.name}</p>}
-            </div>
-
-            {importResult && (
-              <div
-                className={`p-3 rounded-lg text-xs space-y-1.5 ${
-                  importResult.errors.length > 0
-                    ? "bg-destructive/15 text-destructive border border-destructive/30"
-                    : "bg-emerald-100 text-emerald-900 border border-emerald-300"
-                }`}
-              >
-                <p className="font-bold">
-                  {importResult.errors.length > 0 ? "Import Validation Errors:" : "Import Result:"}
-                </p>
-                <p>
-                  Created: {importResult.created} | Updated: {importResult.updated} | Errors:{" "}
-                  {importResult.errors.length}
-                </p>
-                {importResult.errors.map((err, idx) => (
-                  <p key={idx} className="font-mono">
-                    Row {err.row}: {err.message}
-                  </p>
-                ))}
-              </div>
+          <div className="border border-dashed rounded-lg p-6 text-center space-y-2">
+            <input
+              type="file"
+              accept=".csv"
+              onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
+              className="text-sm file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-primary-foreground hover:file:opacity-90"
+            />
+            {file && (
+              <p className="text-xs font-mono text-emerald-600 font-medium">
+                Selected: {file.name}
+              </p>
             )}
+          </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t">
-              <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="outline"
-                disabled={!file || importLoading}
-                onClick={() => handleImport(true)}
-              >
-                Dry Run (Validate)
-              </Button>
-              <Button disabled={!file || importLoading} onClick={() => handleImport(false)}>
-                {importLoading ? "Importing..." : "Confirm & Import"}
-              </Button>
+          {importResult && (
+            <div
+              className={`p-3 rounded-lg text-xs space-y-1.5 ${
+                importResult.errors.length > 0
+                  ? "bg-destructive/15 text-destructive border border-destructive/30"
+                  : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
+              }`}
+            >
+              <p className="font-bold">
+                {importResult.errors.length > 0
+                  ? "Import Validation Errors:"
+                  : "Import Completed Successfully:"}
+              </p>
+              <p>
+                Created: {importResult.created} | Updated: {importResult.updated} | Skipped:{" "}
+                {importResult.skipped} | Errors: {importResult.errors.length}
+              </p>
+              {importResult.errors.map((err, idx) => (
+                <p key={idx} className="font-mono">
+                  Row {err.row}: {err.message}
+                </p>
+              ))}
             </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2 border-t">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsModalOpen(false);
+                setImportError(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="outline"
+              disabled={!file || importLoading}
+              onClick={() => handleImport(true)}
+            >
+              Dry Run (Validate)
+            </Button>
+            <Button
+              disabled={!file || importLoading}
+              onClick={() => handleImport(false)}
+            >
+              {importLoading ? "Importing..." : "Confirm & Import"}
+            </Button>
           </div>
         </div>
-      )}
+      </AccessibleModal>
     </div>
   );
 }

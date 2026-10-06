@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Response
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,6 +26,7 @@ NOT_AVAILABLE_BODY = "END Not available."
 )
 async def ussd_callback(
     secret: str,
+    request: Request,
     sessionId: str = Form(""),
     serviceCode: str = Form(""),
     phoneNumber: str = Form(""),
@@ -41,9 +42,10 @@ async def ussd_callback(
     try:
         # 1. Validate Secret Path Segment
         if secret != settings.USSD_WEBHOOK_SECRET:
+            phone_log = phoneNumber if settings.LOG_USSD_PHONE else hash_phone(phoneNumber)
             logger.warning(
-                "Unauthorized USSD webhook attempt: invalid secret. phone_hash=%s",
-                hash_phone(phoneNumber),
+                "Unauthorized USSD webhook attempt: invalid secret. phone=%s",
+                phone_log,
             )
             return PlainTextResponse(
                 NOT_AVAILABLE_BODY,
@@ -51,10 +53,26 @@ async def ussd_callback(
                 media_type="text/plain; charset=utf-8",
             )
 
+        # 2. Check IP Allowlist if configured
+        if settings.at_allowed_ips_list:
+            client_ip = request.headers.get("x-forwarded-for")
+            if client_ip:
+                client_ip = client_ip.split(",")[0].strip()
+            else:
+                client_ip = request.client.host if request.client else ""
+            if client_ip not in settings.at_allowed_ips_list:
+                logger.warning("Rejected USSD webhook from unauthorized IP: %s", client_ip)
+                return PlainTextResponse(
+                    NOT_AVAILABLE_BODY,
+                    status_code=200,
+                    media_type="text/plain; charset=utf-8",
+                )
+
+        phone_log = phoneNumber if settings.LOG_USSD_PHONE else hash_phone(phoneNumber)
         logger.info(
-            "USSD request received. session_id=%s phone_hash=%s text_len=%d",
+            "USSD request received. session_id=%s phone=%s text_len=%d",
             sessionId,
-            hash_phone(phoneNumber),
+            phone_log,
             len(text),
         )
 
@@ -109,16 +127,31 @@ async def dev_ussd_simulator(
     if settings.APP_ENV == "production":
         raise HTTPException(status_code=404, detail="Not available in production")
 
-    _, response_body = await handle_ussd_request(
-        session_id=payload.sessionId,
-        service_code=payload.serviceCode or "*384*1234#",
-        phone_number=payload.phoneNumber,
-        raw_text=payload.text,
-        db=db,
-    )
+    try:
+        _, response_body = await handle_ussd_request(
+            session_id=payload.sessionId,
+            service_code=payload.serviceCode or "*384*1234#",
+            phone_number=payload.phoneNumber,
+            raw_text=payload.text,
+            db=db,
+        )
 
-    return PlainTextResponse(
-        response_body,
-        status_code=200,
-        media_type="text/plain; charset=utf-8",
-    )
+        return PlainTextResponse(
+            response_body,
+            status_code=200,
+            media_type="text/plain; charset=utf-8",
+        )
+    except USSDLengthExceededError as e:
+        logger.error("Dev USSD screen exceeded character limit: %s", str(e))
+        return PlainTextResponse(
+            SERVICE_UNAVAILABLE_BODY,
+            status_code=200,
+            media_type="text/plain; charset=utf-8",
+        )
+    except Exception as e:
+        logger.exception("Unexpected error in Dev USSD simulator: %s", type(e).__name__)
+        return PlainTextResponse(
+            SERVICE_UNAVAILABLE_BODY,
+            status_code=200,
+            media_type="text/plain; charset=utf-8",
+        )

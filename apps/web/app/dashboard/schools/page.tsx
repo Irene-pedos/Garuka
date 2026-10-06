@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { createSchool, fetchSchools, fetchSectors } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
+import { AccessibleModal } from "@/components/ui/modal";
+import { ScopeHeader } from "@/components/scope-header";
+import { Plus, RefreshCw, AlertTriangle } from "lucide-react";
 
 interface SchoolItem {
   id: string;
@@ -21,6 +24,7 @@ export default function SchoolsPage() {
   const [schools, setSchools] = useState<SchoolItem[]>([]);
   const [sectors, setSectors] = useState<SectorItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Create School Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -29,29 +33,38 @@ export default function SchoolsPage() {
   const [level, setLevel] = useState<"primary" | "secondary" | "both">("both");
   const [sectorId, setSectorId] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
-  const loadData = () => {
+  const loadData = (signal?: AbortSignal) => {
     setLoading(true);
-    Promise.all([fetchSchools(), fetchSectors()])
+    setFetchError(null);
+    Promise.all([fetchSchools(signal), fetchSectors(undefined, signal)])
       .then(([schData, secData]) => {
         setSchools(schData as SchoolItem[]);
         setSectors(secData as SectorItem[]);
         if (secData.length > 0 && !sectorId) {
-          setSectorId(secData[0].id);
+          setSectorId((secData[0] as SectorItem).id);
         }
       })
-      .catch((err) => console.error(err))
+      .catch((err) => {
+        if (err.name !== "AbortError") {
+          setFetchError(err.message || "Failed to load schools");
+        }
+      })
       .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    loadData();
+    const controller = new AbortController();
+    loadData(controller.signal);
+    return () => controller.abort();
   }, []);
 
   const handleCreateSchool = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!sectorId) return;
     setSubmitting(true);
+    setCreateError(null);
     try {
       await createSchool({
         sector_id: sectorId,
@@ -64,7 +77,7 @@ export default function SchoolsPage() {
       setCode("");
       loadData();
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Creation failed");
+      setCreateError(err instanceof Error ? err.message : "Creation failed");
     } finally {
       setSubmitting(false);
     }
@@ -72,48 +85,93 @@ export default function SchoolsPage() {
 
   return (
     <div className="space-y-6 max-w-6xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Schools</h1>
-          <p className="text-sm text-muted-foreground">Manage schools participating in the Garuka dropout early-warning system</p>
-        </div>
-        <Button onClick={() => setIsModalOpen(true)}>Add School</Button>
-      </div>
+      <ScopeHeader
+        title="Schools Directory"
+        description="Manage schools participating in the Garuka dropout early-warning system."
+        scope={{ level: "national", name: "Rwanda" }}
+      >
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => loadData()}
+          disabled={loading}
+        >
+          <RefreshCw className={`h-4 w-4 mr-1.5 ${loading ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
+        <Button size="sm" onClick={() => setIsModalOpen(true)}>
+          <Plus className="h-4 w-4 mr-1.5" />
+          Add School
+        </Button>
+      </ScopeHeader>
 
-      <div className="border rounded-xl bg-card overflow-hidden shadow-sm">
+      {fetchError && (
+        <div
+          role="alert"
+          className="p-4 bg-destructive/15 border border-destructive/20 text-destructive rounded-lg flex items-center justify-between"
+        >
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span>{fetchError}</span>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => loadData()}>
+            Retry
+          </Button>
+        </div>
+      )}
+
+      <div className="border rounded-xl bg-card overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
-            <thead className="bg-muted text-muted-foreground uppercase text-xs border-b">
+            <thead className="bg-muted/50 border-b text-xs uppercase text-muted-foreground font-semibold">
               <tr>
-                <th className="px-4 py-3">School Name</th>
-                <th className="px-4 py-3">School Code</th>
-                <th className="px-4 py-3">Level</th>
-                <th className="px-4 py-3">Status</th>
+                <th className="px-6 py-4">School Name</th>
+                <th className="px-6 py-4">Code</th>
+                <th className="px-6 py-4">Level</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {loading ? (
                 <tr>
-                  <td colSpan={4} className="text-center py-8 text-muted-foreground">
-                    Loading schools...
+                  <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground animate-pulse">
+                    Loading schools list...
+                  </td>
+                </tr>
+              ) : schools.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
+                    No schools enrolled yet. Click "Add School" to register the first institution.
                   </td>
                 </tr>
               ) : (
-                schools.map((s) => (
-                  <tr key={s.id} className="hover:bg-muted/30">
-                    <td className="px-4 py-3 font-semibold text-foreground">{s.name}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{s.code || "—"}</td>
-                    <td className="px-4 py-3 capitalize text-muted-foreground">{s.level}</td>
-                    <td className="px-4 py-3">
+                schools.map((school) => (
+                  <tr key={school.id} className="hover:bg-muted/20">
+                    <td className="px-6 py-4 font-medium text-foreground">
+                      {school.name}
+                    </td>
+                    <td className="px-6 py-4 font-mono text-xs text-muted-foreground">
+                      {school.code || "—"}
+                    </td>
+                    <td className="px-6 py-4 capitalize text-muted-foreground">
+                      {school.level}
+                    </td>
+                    <td className="px-6 py-4">
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          s.is_active
-                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                          school.is_active
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                             : "bg-muted text-muted-foreground"
                         }`}
                       >
-                        {s.is_active ? "Active" : "Inactive"}
+                        {school.is_active ? "Active" : "Inactive"}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <Button variant="ghost" size="sm" className="h-8 text-xs">
+                        Configure
+                      </Button>
                     </td>
                   </tr>
                 ))
@@ -123,85 +181,108 @@ export default function SchoolsPage() {
         </div>
       </div>
 
-      {/* Create School Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-card border rounded-xl max-w-md w-full p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b pb-3">
-              <h2 className="font-bold text-lg">Add New School</h2>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-muted-foreground hover:text-foreground text-sm"
-              >
-                ✕
-              </button>
+      {/* Accessible Create School Modal */}
+      <AccessibleModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setCreateError(null);
+        }}
+        title="Register New School"
+        description="Add a primary or secondary school into Garuka."
+      >
+        <form onSubmit={handleCreateSchool} className="space-y-4">
+          {createError && (
+            <div
+              role="alert"
+              className="p-3 bg-destructive/15 border border-destructive/20 text-destructive rounded text-xs font-medium flex items-center gap-1.5"
+            >
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span>{createError}</span>
             </div>
+          )}
 
-            <form onSubmit={handleCreateSchool} className="space-y-3">
-              <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase text-muted-foreground">Sector</label>
-                <select
-                  value={sectorId}
-                  onChange={(e) => setSectorId(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 border rounded-md text-sm bg-background"
-                >
-                  {sectors.map((sec) => (
-                    <option key={sec.id} value={sec.id}>
-                      {sec.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase text-muted-foreground">School Name</label>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="GS Demo 3"
-                  className="w-full px-3 py-2 border rounded-md text-sm bg-background"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase text-muted-foreground">School Code</label>
-                <input
-                  type="text"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  placeholder="GSD3"
-                  className="w-full px-3 py-2 border rounded-md text-sm bg-background font-mono"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase text-muted-foreground">Level</label>
-                <select
-                  value={level}
-                  onChange={(e) => setLevel(e.target.value as "primary" | "secondary" | "both")}
-                  className="w-full px-3 py-2 border rounded-md text-sm bg-background"
-                >
-                  <option value="primary">Primary</option>
-                  <option value="secondary">Secondary</option>
-                  <option value="both">Both (Primary + Secondary)</option>
-                </select>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t">
-                <Button variant="outline" type="button" onClick={() => setIsModalOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={submitting}>
-                  {submitting ? "Saving..." : "Save School"}
-                </Button>
-              </div>
-            </form>
+          <div className="space-y-1.5">
+            <label htmlFor="school-sector" className="text-xs font-semibold uppercase text-muted-foreground">
+              Sector
+            </label>
+            <select
+              id="school-sector"
+              value={sectorId}
+              onChange={(e) => setSectorId(e.target.value)}
+              required
+              className="w-full px-3 py-2 border rounded-md text-sm bg-background focus:outline-hidden focus:ring-2 focus:ring-primary"
+            >
+              {sectors.map((sec) => (
+                <option key={sec.id} value={sec.id}>
+                  {sec.name}
+                </option>
+              ))}
+            </select>
           </div>
-        </div>
-      )}
+
+          <div className="space-y-1.5">
+            <label htmlFor="school-name" className="text-xs font-semibold uppercase text-muted-foreground">
+              School Name
+            </label>
+            <input
+              id="school-name"
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. GS Remera Protestant"
+              className="w-full px-3 py-2 border rounded-md text-sm bg-background focus:outline-hidden focus:ring-2 focus:ring-primary"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label htmlFor="school-code" className="text-xs font-semibold uppercase text-muted-foreground">
+              School Code
+            </label>
+            <input
+              id="school-code"
+              type="text"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="e.g. GS_REM_01"
+              className="w-full px-3 py-2 border rounded-md text-sm bg-background font-mono focus:outline-hidden focus:ring-2 focus:ring-primary"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label htmlFor="school-level" className="text-xs font-semibold uppercase text-muted-foreground">
+              Level
+            </label>
+            <select
+              id="school-level"
+              value={level}
+              onChange={(e) => setLevel(e.target.value as "primary" | "secondary" | "both")}
+              className="w-full px-3 py-2 border rounded-md text-sm bg-background focus:outline-hidden focus:ring-2 focus:ring-primary"
+            >
+              <option value="primary">Primary</option>
+              <option value="secondary">Secondary</option>
+              <option value="both">Both (Primary + Secondary)</option>
+            </select>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-3 border-t">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => {
+                setIsModalOpen(false);
+                setCreateError(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={submitting}>
+              {submitting ? "Saving..." : "Save School"}
+            </Button>
+          </div>
+        </form>
+      </AccessibleModal>
     </div>
   );
 }

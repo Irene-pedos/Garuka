@@ -21,17 +21,16 @@ from app.services.rules_engine import (
 
 @pytest.mark.asyncio
 async def test_risk_score_calculation():
-    # Base: grade 5 (weight 1.5 * 10 = 15)
-    # Repeater (+15)
-    # Over-age (+20) (e.g. birth_year 2011 for grade 5 in 2026 -> age 15, expected 10-11)
-    # Absences: 6 in 30d (+25)
-    # Prior case (+15)
+    # Base: grade 5 (+15) + repeater (+10) + over-age birth_year=2011 in 2026 (+10) +
+    # absences_30d=6 (+30) + prior_case (+10) = 75
+    # current_year pinned to 2026 so this test is deterministic regardless of real clock
     score = calculate_risk_score(
         grade=5,
         is_repeater=True,
         birth_year=2011,
         absences_30d=6,
         has_prior_case=True,
+        current_year=2026,
     )
     assert score >= 70
     assert score <= 100
@@ -265,4 +264,6 @@ async def test_generate_case_ref_collision_free(db_session: AsyncSession):
     # Next generated ref must NOT collide with ref1
     ref2 = await generate_case_ref(db_session)
     assert ref2 != ref1
-    assert ref2.startswith("GK-2026-")
+    from app.services.ussd.calendar_helper import get_kigali_today
+    current_year = get_kigali_today().year
+    assert ref2.startswith(f"GK-{current_year}-")

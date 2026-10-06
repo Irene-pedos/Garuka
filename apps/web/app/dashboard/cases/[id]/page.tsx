@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AccessibleModal } from "@/components/ui/modal";
 
 export default function CaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -26,6 +27,7 @@ export default function CaseDetailPage({ params }: { params: Promise<{ id: strin
 
   // Action states
   const [actionLoading, setActionLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [selectedMentorId, setSelectedMentorId] = useState("");
   const [escalateNote, setEscalateNote] = useState("");
   const [newNote, setNewNote] = useState("");
@@ -65,12 +67,13 @@ export default function CaseDetailPage({ params }: { params: Promise<{ id: strin
   const handleAssignMentor = async () => {
     if (!selectedMentorId) return;
     setActionLoading(true);
+    setActionError(null);
     try {
       const updated = await assignCaseMentor(caseId, selectedMentorId);
       setCaseData(updated);
       setShowAssignModal(false);
     } catch (err: any) {
-      alert(err.message || "Failed to assign mentor");
+      setActionError(err.message || "Failed to assign mentor");
     } finally {
       setActionLoading(false);
     }
@@ -78,13 +81,14 @@ export default function CaseDetailPage({ params }: { params: Promise<{ id: strin
 
   const handleEscalate = async () => {
     setActionLoading(true);
+    setActionError(null);
     try {
       const updated = await escalateCase(caseId, 3, escalateNote);
       setCaseData(updated);
       setShowEscalateModal(false);
       setEscalateNote("");
     } catch (err: any) {
-      alert(err.message || "Failed to escalate case");
+      setActionError(err.message || "Failed to escalate case");
     } finally {
       setActionLoading(false);
     }
@@ -93,13 +97,14 @@ export default function CaseDetailPage({ params }: { params: Promise<{ id: strin
   const handleAddNote = async () => {
     if (!newNote.trim()) return;
     setActionLoading(true);
+    setActionError(null);
     try {
       const updated = await addCaseNote(caseId, newNote.trim());
       setCaseData(updated);
       setShowNoteModal(false);
       setNewNote("");
     } catch (err: any) {
-      alert(err.message || "Failed to add note");
+      setActionError(err.message || "Failed to add note");
     } finally {
       setActionLoading(false);
     }
@@ -107,13 +112,14 @@ export default function CaseDetailPage({ params }: { params: Promise<{ id: strin
 
   const handleResolve = async () => {
     setActionLoading(true);
+    setActionError(null);
     try {
       const updated = await resolveCase(caseId, resolveOutcome, resolveNote);
       setCaseData(updated);
       setShowResolveModal(false);
       setResolveNote("");
     } catch (err: any) {
-      alert(err.message || "Failed to resolve case");
+      setActionError(err.message || "Failed to resolve case");
     } finally {
       setActionLoading(false);
     }
@@ -427,141 +433,205 @@ export default function CaseDetailPage({ params }: { params: Promise<{ id: strin
       </div>
 
       {/* Assign Mentor Modal */}
-      {showAssignModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-card border rounded-lg p-6 max-w-md w-full space-y-4">
-            <h3 className="font-bold text-lg">Assign Community Mentor</h3>
-            <p className="text-xs text-muted-foreground">
-              Select an active mentor from the community to follow up on this student.
-            </p>
-            <select
-              value={selectedMentorId}
-              onChange={(e) => setSelectedMentorId(e.target.value)}
-              className="w-full text-sm border rounded px-3 py-2 bg-background"
-            >
-              <option value="">-- Choose a mentor --</option>
-              {mentors.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name} ({m.active_cases} active cases, {m.sector_name || "Sector"})
-                </option>
-              ))}
-            </select>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" size="sm" onClick={() => setShowAssignModal(false)}>
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                disabled={!selectedMentorId || actionLoading}
-                onClick={handleAssignMentor}
-              >
-                {actionLoading ? "Saving..." : "Confirm Assignment"}
-              </Button>
+      <AccessibleModal
+        isOpen={showAssignModal}
+        onClose={() => {
+          setShowAssignModal(false);
+          setActionError(null);
+        }}
+        title="Assign Community Mentor"
+        description="Select an active mentor from the community to follow up on this student."
+      >
+        <div className="space-y-4">
+          {actionError && (
+            <div role="alert" className="p-3 bg-destructive/15 border border-destructive/20 text-destructive rounded text-xs">
+              {actionError}
             </div>
+          )}
+          <select
+            aria-label="Select community mentor"
+            value={selectedMentorId}
+            onChange={(e) => setSelectedMentorId(e.target.value)}
+            className="w-full text-sm border rounded px-3 py-2 bg-background focus:outline-hidden focus:ring-2 focus:ring-primary"
+          >
+            <option value="">-- Choose a mentor --</option>
+            {mentors.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name} ({m.active_cases} active cases, {m.sector_name || "Sector"})
+              </option>
+            ))}
+          </select>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setShowAssignModal(false);
+                setActionError(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              disabled={!selectedMentorId || actionLoading}
+              onClick={handleAssignMentor}
+            >
+              {actionLoading ? "Saving..." : "Confirm Assignment"}
+            </Button>
           </div>
         </div>
-      )}
+      </AccessibleModal>
 
       {/* Escalate Modal */}
-      {showEscalateModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-card border rounded-lg p-6 max-w-md w-full space-y-4">
-            <h3 className="font-bold text-lg">Escalate to Level 3 (Sector Officer)</h3>
-            <p className="text-xs text-muted-foreground">
-              This will notify the Sector Education Officer (SEO) that school-level and mentor
-              interventions require sector administrative support.
-            </p>
-            <Input
-              placeholder="Reason / context for escalation..."
-              value={escalateNote}
-              onChange={(e) => setEscalateNote(e.target.value)}
-            />
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" size="sm" onClick={() => setShowEscalateModal(false)}>
-                Cancel
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                disabled={actionLoading}
-                onClick={handleEscalate}
-              >
-                {actionLoading ? "Escalating..." : "Confirm Escalation"}
-              </Button>
+      <AccessibleModal
+        isOpen={showEscalateModal}
+        onClose={() => {
+          setShowEscalateModal(false);
+          setActionError(null);
+        }}
+        title="Escalate to Level 3 (Sector Officer)"
+        description="This will notify the Sector Education Officer (SEO) that school-level and mentor interventions require sector administrative support."
+      >
+        <div className="space-y-4">
+          {actionError && (
+            <div role="alert" className="p-3 bg-destructive/15 border border-destructive/20 text-destructive rounded text-xs">
+              {actionError}
             </div>
+          )}
+          <Input
+            aria-label="Reason for escalation"
+            placeholder="Reason / context for escalation..."
+            value={escalateNote}
+            onChange={(e) => setEscalateNote(e.target.value)}
+          />
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setShowEscalateModal(false);
+                setActionError(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={actionLoading}
+              onClick={handleEscalate}
+            >
+              {actionLoading ? "Escalating..." : "Confirm Escalation"}
+            </Button>
           </div>
         </div>
-      )}
+      </AccessibleModal>
 
       {/* Add Note Modal */}
-      {showNoteModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-card border rounded-lg p-6 max-w-md w-full space-y-4">
-            <h3 className="font-bold text-lg">Add Audit Note</h3>
-            <textarea
-              rows={3}
-              placeholder="Write follow-up notes, observations, or action items..."
-              value={newNote}
-              onChange={(e) => setNewNote(e.target.value)}
-              className="w-full text-sm border rounded px-3 py-2 bg-background"
-            />
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" size="sm" onClick={() => setShowNoteModal(false)}>
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                disabled={!newNote.trim() || actionLoading}
-                onClick={handleAddNote}
-              >
-                {actionLoading ? "Saving..." : "Save Note"}
-              </Button>
+      <AccessibleModal
+        isOpen={showNoteModal}
+        onClose={() => {
+          setShowNoteModal(false);
+          setActionError(null);
+        }}
+        title="Add Audit Note"
+        description="Add operational follow-up notes, observations, or action items."
+      >
+        <div className="space-y-4">
+          {actionError && (
+            <div role="alert" className="p-3 bg-destructive/15 border border-destructive/20 text-destructive rounded text-xs">
+              {actionError}
             </div>
+          )}
+          <textarea
+            aria-label="Audit note text"
+            rows={3}
+            placeholder="Write follow-up notes, observations, or action items..."
+            value={newNote}
+            onChange={(e) => setNewNote(e.target.value)}
+            className="w-full text-sm border rounded px-3 py-2 bg-background focus:outline-hidden focus:ring-2 focus:ring-primary"
+          />
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setShowNoteModal(false);
+                setActionError(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              disabled={!newNote.trim() || actionLoading}
+              onClick={handleAddNote}
+            >
+              {actionLoading ? "Saving..." : "Save Note"}
+            </Button>
           </div>
         </div>
-      )}
+      </AccessibleModal>
 
       {/* Resolve Case Modal */}
-      {showResolveModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-card border rounded-lg p-6 max-w-md w-full space-y-4">
-            <h3 className="font-bold text-lg">Resolve / Close Case</h3>
-            <div className="space-y-2">
-              <label className="text-xs font-semibold">Outcome</label>
-              <select
-                value={resolveOutcome}
-                onChange={(e) => setResolveOutcome(e.target.value)}
-                className="w-full text-sm border rounded px-3 py-2 bg-background"
-              >
-                <option value="resolved_returned">Student Returned to School</option>
-                <option value="closed_moved">Student Moved / Transferred</option>
-                <option value="closed_other">Closed Other</option>
-              </select>
+      <AccessibleModal
+        isOpen={showResolveModal}
+        onClose={() => {
+          setShowResolveModal(false);
+          setActionError(null);
+        }}
+        title="Resolve / Close Case"
+        description="Select resolution outcome and summarize the resolution."
+      >
+        <div className="space-y-4">
+          {actionError && (
+            <div role="alert" className="p-3 bg-destructive/15 border border-destructive/20 text-destructive rounded text-xs">
+              {actionError}
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-semibold">Notes</label>
-              <Input
-                placeholder="Resolution summary..."
-                value={resolveNote}
-                onChange={(e) => setResolveNote(e.target.value)}
-              />
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" size="sm" onClick={() => setShowResolveModal(false)}>
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                className="bg-emerald-600 hover:bg-emerald-700"
-                disabled={actionLoading}
-                onClick={handleResolve}
-              >
-                {actionLoading ? "Resolving..." : "Confirm Resolution"}
-              </Button>
-            </div>
+          )}
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold">Outcome</label>
+            <select
+              value={resolveOutcome}
+              onChange={(e) => setResolveOutcome(e.target.value)}
+              className="w-full text-sm border rounded px-3 py-2 bg-background focus:outline-hidden focus:ring-2 focus:ring-primary"
+            >
+              <option value="resolved_returned">Student Returned to School</option>
+              <option value="closed_moved">Student Moved / Transferred</option>
+              <option value="closed_other">Closed Other</option>
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold">Notes</label>
+            <Input
+              placeholder="Resolution summary..."
+              value={resolveNote}
+              onChange={(e) => setResolveNote(e.target.value)}
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setShowResolveModal(false);
+                setActionError(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="bg-emerald-600 hover:bg-emerald-700"
+              disabled={actionLoading}
+              onClick={handleResolve}
+            >
+              {actionLoading ? "Resolving..." : "Confirm Resolution"}
+            </Button>
           </div>
         </div>
-      )}
+      </AccessibleModal>
     </div>
   );
 }

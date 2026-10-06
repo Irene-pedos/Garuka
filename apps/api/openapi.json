@@ -1,8 +1,7 @@
-﻿{
+{
   "openapi": "3.1.0",
   "info": {
     "title": "Garuka API",
-    "description": "Dropout early-warning and attendance monitoring API",
     "version": "0.1.0"
   },
   "paths": {
@@ -147,6 +146,184 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserMeResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Update Me",
+        "operationId": "auth_update_me",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProfileRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserMeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/change-password": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Change Password",
+        "operationId": "auth_change_password",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/change-pin": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Change Pin",
+        "operationId": "auth_change_pin",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePinRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/avatar": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Upload Avatar",
+        "operationId": "auth_upload_avatar",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_auth_upload_avatar"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AvatarUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -1206,6 +1383,1392 @@
         }
       }
     },
+    "/api/v1/classes/{class_id}/attendance": {
+      "get": {
+        "tags": [
+          "attendance"
+        ],
+        "summary": "Get attendance and student list for class on date",
+        "operationId": "get_class_attendance",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "class_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Class Id"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassAttendanceResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "attendance"
+        ],
+        "summary": "Submit or update attendance for class on date",
+        "operationId": "submit_class_attendance",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "class_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Class Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitAttendanceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttendanceSubmissionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/absences/{absence_id}": {
+      "delete": {
+        "tags": [
+          "attendance"
+        ],
+        "summary": "Void an absence record",
+        "operationId": "void_absence",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "absence_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Absence Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/attendance/compliance": {
+      "get": {
+        "tags": [
+          "attendance"
+        ],
+        "summary": "Get class compliance grid for school and date range",
+        "operationId": "get_attendance_compliance",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "school_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "School Id"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Format"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SchoolComplianceResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cases": {
+      "get": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "List Cases",
+        "operationId": "list_cases",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/CaseStatusEnum"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Level"
+            }
+          },
+          {
+            "name": "school_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "School Id"
+            }
+          },
+          {
+            "name": "sector_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sector Id"
+            }
+          },
+          {
+            "name": "mentor_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Mentor Id"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CaseListItem"
+                  },
+                  "title": "Response List Cases"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cases/{case_id}": {
+      "get": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "Get Case Detail",
+        "operationId": "get_case_detail",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cases/{case_id}/assign": {
+      "patch": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "Assign Case Mentor",
+        "operationId": "assign_case_mentor",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseAssignRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cases/{case_id}/escalate": {
+      "post": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "Escalate Case",
+        "operationId": "escalate_case",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseEscalateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cases/{case_id}/notes": {
+      "post": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "Add Case Note",
+        "operationId": "add_case_note",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseNoteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cases/{case_id}/resolve": {
+      "post": {
+        "tags": [
+          "cases"
+        ],
+        "summary": "Resolve Case",
+        "operationId": "resolve_case",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "case_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Case Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CaseResolveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CaseDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/help-requests": {
+      "get": {
+        "tags": [
+          "help-requests"
+        ],
+        "summary": "List Help Requests",
+        "operationId": "list_help_requests",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/HelpRequestStatusEnum"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "school_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "School Id"
+            }
+          },
+          {
+            "name": "barrier_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/BarrierCodeEnum"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Barrier Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HelpRequestListItem"
+                  },
+                  "title": "Response List Help Requests"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "help-requests"
+        ],
+        "summary": "Create Help Request",
+        "operationId": "create_help_request",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HelpRequestCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HelpRequestListItem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/help-requests/{id}": {
+      "patch": {
+        "tags": [
+          "help-requests"
+        ],
+        "summary": "Update Help Request Status",
+        "operationId": "update_help_request_status",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HelpRequestUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HelpRequestListItem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/mentors": {
+      "get": {
+        "tags": [
+          "mentors"
+        ],
+        "summary": "List Mentors",
+        "operationId": "list_mentors",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sector_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sector Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MentorRead"
+                  },
+                  "title": "Response List Mentors"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/overview": {
+      "get": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "Get Analytics Overview",
+        "operationId": "get_analytics_overview",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalyticsOverviewResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/analytics/trends": {
+      "get": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "Get Attendance Trends",
+        "operationId": "get_attendance_trends",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 90,
+              "title": "Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DailyAttendanceTrendItem"
+                  },
+                  "title": "Response Get Attendance Trends"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/schools-compare": {
+      "get": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "Compare Schools",
+        "operationId": "compare_schools",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SchoolCompareItem"
+                  },
+                  "type": "array",
+                  "title": "Response Compare Schools"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/settings": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Get App Settings",
+        "operationId": "get_app_settings",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppSettingsRead"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "patch": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Update App Settings",
+        "operationId": "update_app_settings",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppSettingsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppSettingsRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/sms/outbox": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List Sms Outbox",
+        "operationId": "list_sms_outbox",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/SmsStatusEnum"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "template_key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Template Key"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SmsOutboxListItem"
+                  },
+                  "title": "Response List Sms Outbox"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/sms/outbox/{id}/retry": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Retry Sms Outbox",
+        "operationId": "retry_sms_outbox",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SmsOutboxListItem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/audit": {
+      "get": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "List Audit Logs",
+        "operationId": "list_audit_logs",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "action",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Action"
+            }
+          },
+          {
+            "name": "entity_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Entity Type"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditLogListItem"
+                  },
+                  "title": "Response List Audit Logs"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/webhooks/at/sms-delivery/{secret}": {
+      "post": {
+        "tags": [
+          "sms-webhook"
+        ],
+        "summary": "Africa's Talking SMS Delivery Report Webhook",
+        "operationId": "sms_delivery_callback_api_v1_webhooks_at_sms_delivery__secret__post",
+        "parameters": [
+          {
+            "name": "secret",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Secret"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_sms_delivery_callback_api_v1_webhooks_at_sms_delivery__secret__post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/ussd/{secret}": {
       "post": {
         "tags": [
@@ -1257,10 +2820,512 @@
           }
         }
       }
+    },
+    "/api/v1/dev/ussd": {
+      "post": {
+        "tags": [
+          "ussd"
+        ],
+        "summary": "Dev USSD Simulator endpoint",
+        "description": "Dev-only USSD endpoint simulating Africa's Talking webhook.",
+        "operationId": "dev_ussd_simulator",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DevUssdRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AbsenceStatusEnum": {
+        "type": "string",
+        "enum": [
+          "active",
+          "voided"
+        ],
+        "title": "AbsenceStatusEnum"
+      },
+      "ActiveTermInfo": {
+        "properties": {
+          "academic_year": {
+            "type": "integer",
+            "title": "Academic Year"
+          },
+          "term_no": {
+            "type": "integer",
+            "title": "Term No"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "academic_year",
+          "term_no",
+          "name"
+        ],
+        "title": "ActiveTermInfo"
+      },
+      "AnalyticsOverviewResponse": {
+        "properties": {
+          "as_of": {
+            "type": "string",
+            "format": "date-time",
+            "title": "As Of"
+          },
+          "timezone": {
+            "type": "string",
+            "title": "Timezone",
+            "default": "Africa/Kigali (UTC+2)"
+          },
+          "kigali_today": {
+            "type": "string",
+            "title": "Kigali Today"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/ScopeInfo"
+          },
+          "kpis": {
+            "$ref": "#/components/schemas/OverviewKPIs"
+          },
+          "cases_by_level": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Cases By Level"
+          },
+          "active_term": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ActiveTermInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "overdue_cases": {
+            "items": {
+              "$ref": "#/components/schemas/OverdueCaseItem"
+            },
+            "type": "array",
+            "title": "Overdue Cases"
+          },
+          "reporting_gaps": {
+            "items": {
+              "$ref": "#/components/schemas/ReportingGapItem"
+            },
+            "type": "array",
+            "title": "Reporting Gaps"
+          },
+          "classes_missing_today": {
+            "items": {
+              "$ref": "#/components/schemas/MissingClassItem"
+            },
+            "type": "array",
+            "title": "Classes Missing Today"
+          },
+          "recent_escalations": {
+            "items": {
+              "$ref": "#/components/schemas/RecentEscalationItem"
+            },
+            "type": "array",
+            "title": "Recent Escalations"
+          },
+          "pending_help_requests": {
+            "items": {
+              "$ref": "#/components/schemas/PendingHelpRequestItem"
+            },
+            "type": "array",
+            "title": "Pending Help Requests"
+          },
+          "attendance_trend": {
+            "items": {
+              "$ref": "#/components/schemas/DailyAttendanceTrendItem"
+            },
+            "type": "array",
+            "title": "Attendance Trend"
+          }
+        },
+        "type": "object",
+        "required": [
+          "as_of",
+          "kigali_today",
+          "scope",
+          "kpis"
+        ],
+        "title": "AnalyticsOverviewResponse"
+      },
+      "AppSettingsRead": {
+        "properties": {
+          "rule_consecutive_days": {
+            "type": "integer",
+            "title": "Rule Consecutive Days"
+          },
+          "rule_monthly_absences": {
+            "type": "integer",
+            "title": "Rule Monthly Absences"
+          },
+          "rule_escalate_term_absences": {
+            "type": "integer",
+            "title": "Rule Escalate Term Absences"
+          },
+          "rule_visit_sla_school_days": {
+            "type": "integer",
+            "title": "Rule Visit Sla School Days"
+          },
+          "rule_return_streak_school_days": {
+            "type": "integer",
+            "title": "Rule Return Streak School Days"
+          },
+          "rule_district_escalation_days": {
+            "type": "integer",
+            "title": "Rule District Escalation Days"
+          },
+          "mentor_max_active_cases": {
+            "type": "integer",
+            "title": "Mentor Max Active Cases"
+          },
+          "sms_quiet_hours_start": {
+            "type": "string",
+            "title": "Sms Quiet Hours Start"
+          },
+          "sms_quiet_hours_end": {
+            "type": "string",
+            "title": "Sms Quiet Hours End"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rule_consecutive_days",
+          "rule_monthly_absences",
+          "rule_escalate_term_absences",
+          "rule_visit_sla_school_days",
+          "rule_return_streak_school_days",
+          "rule_district_escalation_days",
+          "mentor_max_active_cases",
+          "sms_quiet_hours_start",
+          "sms_quiet_hours_end"
+        ],
+        "title": "AppSettingsRead"
+      },
+      "AppSettingsUpdate": {
+        "properties": {
+          "rule_consecutive_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 30.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Consecutive Days"
+          },
+          "rule_monthly_absences": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 50.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Monthly Absences"
+          },
+          "rule_escalate_term_absences": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Escalate Term Absences"
+          },
+          "rule_visit_sla_school_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 30.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Visit Sla School Days"
+          },
+          "rule_return_streak_school_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 60.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Return Streak School Days"
+          },
+          "rule_district_escalation_days": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 90.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule District Escalation Days"
+          },
+          "mentor_max_active_cases": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mentor Max Active Cases"
+          },
+          "sms_quiet_hours_start": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sms Quiet Hours Start"
+          },
+          "sms_quiet_hours_end": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sms Quiet Hours End"
+          }
+        },
+        "type": "object",
+        "title": "AppSettingsUpdate"
+      },
+      "AttendanceSubmissionResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "class_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Class Id"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "submitted_by": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Submitted By"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SubmissionSourceEnum"
+          },
+          "absent_count": {
+            "type": "integer",
+            "title": "Absent Count"
+          },
+          "submitted_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Submitted At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "class_id",
+          "date",
+          "submitted_by",
+          "source",
+          "absent_count",
+          "submitted_at"
+        ],
+        "title": "AttendanceSubmissionResponse"
+      },
+      "AuditLogListItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "actor_user_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor User Id"
+          },
+          "actor_role": {
+            "type": "string",
+            "title": "Actor Role"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "entity_type": {
+            "type": "string",
+            "title": "Entity Type"
+          },
+          "entity_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Id"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Meta"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "actor_role",
+          "action",
+          "entity_type",
+          "created_at"
+        ],
+        "title": "AuditLogListItem"
+      },
+      "AvatarUploadResponse": {
+        "properties": {
+          "avatar_url": {
+            "type": "string",
+            "title": "Avatar Url"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "avatar_url",
+          "message"
+        ],
+        "title": "AvatarUploadResponse"
+      },
+      "BarrierCodeEnum": {
+        "type": "string",
+        "enum": [
+          "COST",
+          "HUNGER",
+          "HEALTH",
+          "DISTANCE",
+          "FAMILY",
+          "OTHER"
+        ],
+        "title": "BarrierCodeEnum"
+      },
+      "Body_auth_upload_avatar": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_auth_upload_avatar"
+      },
       "Body_handle_ussd_callback": {
         "properties": {
           "sessionId": {
@@ -1305,6 +3370,57 @@
           "file"
         ],
         "title": "Body_import_students"
+      },
+      "Body_sms_delivery_callback_api_v1_webhooks_at_sms_delivery__secret__post": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "phoneNumber": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phonenumber"
+          },
+          "networkCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Networkcode"
+          },
+          "failureReason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failurereason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status"
+        ],
+        "title": "Body_sms_delivery_callback_api_v1_webhooks_at_sms_delivery__secret__post"
       },
       "CSVImportResult": {
         "properties": {
@@ -1354,6 +3470,640 @@
           "message"
         ],
         "title": "CSVImportRowError"
+      },
+      "CaseAssignRequest": {
+        "properties": {
+          "mentor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Mentor Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "mentor_id"
+        ],
+        "title": "CaseAssignRequest"
+      },
+      "CaseDetail": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "ref": {
+            "type": "string",
+            "title": "Ref"
+          },
+          "student_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Student Id"
+          },
+          "student_name": {
+            "type": "string",
+            "title": "Student Name"
+          },
+          "student_gender": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Student Gender"
+          },
+          "class_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Class Name"
+          },
+          "school_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "School Id"
+          },
+          "school_name": {
+            "type": "string",
+            "title": "School Name"
+          },
+          "sector_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sector Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "level": {
+            "type": "integer",
+            "title": "Level"
+          },
+          "trigger": {
+            "type": "string",
+            "title": "Trigger"
+          },
+          "risk_score": {
+            "type": "integer",
+            "title": "Risk Score"
+          },
+          "mentor_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mentor Id"
+          },
+          "mentor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mentor Name"
+          },
+          "opened_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Opened At"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "sla_deadline": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sla Deadline"
+          },
+          "sla_breached": {
+            "type": "boolean",
+            "title": "Sla Breached",
+            "default": false
+          },
+          "parent_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Name"
+          },
+          "parent_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Phone"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/CaseMetrics"
+          },
+          "absence_heatmap": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Absence Heatmap"
+          },
+          "visits": {
+            "items": {
+              "$ref": "#/components/schemas/MentorVisitRead"
+            },
+            "type": "array",
+            "title": "Visits"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/CaseEventRead"
+            },
+            "type": "array",
+            "title": "Events"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "ref",
+          "student_id",
+          "student_name",
+          "school_id",
+          "school_name",
+          "status",
+          "level",
+          "trigger",
+          "risk_score",
+          "opened_at"
+        ],
+        "title": "CaseDetail"
+      },
+      "CaseEscalateRequest": {
+        "properties": {
+          "to_level": {
+            "type": "integer",
+            "maximum": 3.0,
+            "minimum": 2.0,
+            "title": "To Level"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "to_level"
+        ],
+        "title": "CaseEscalateRequest"
+      },
+      "CaseEventRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "case_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Case Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "case_id",
+          "type",
+          "created_at"
+        ],
+        "title": "CaseEventRead"
+      },
+      "CaseListItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "ref": {
+            "type": "string",
+            "title": "Ref"
+          },
+          "student_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Student Id"
+          },
+          "student_name": {
+            "type": "string",
+            "title": "Student Name"
+          },
+          "student_gender": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Student Gender"
+          },
+          "class_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Class Name"
+          },
+          "school_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "School Id"
+          },
+          "school_name": {
+            "type": "string",
+            "title": "School Name"
+          },
+          "sector_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sector Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "level": {
+            "type": "integer",
+            "title": "Level"
+          },
+          "trigger": {
+            "type": "string",
+            "title": "Trigger"
+          },
+          "risk_score": {
+            "type": "integer",
+            "title": "Risk Score"
+          },
+          "mentor_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mentor Id"
+          },
+          "mentor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mentor Name"
+          },
+          "opened_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Opened At"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "sla_deadline": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sla Deadline"
+          },
+          "sla_breached": {
+            "type": "boolean",
+            "title": "Sla Breached",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "ref",
+          "student_id",
+          "student_name",
+          "school_id",
+          "school_name",
+          "status",
+          "level",
+          "trigger",
+          "risk_score",
+          "opened_at"
+        ],
+        "title": "CaseListItem"
+      },
+      "CaseMetrics": {
+        "properties": {
+          "consecutive_absences": {
+            "type": "integer",
+            "title": "Consecutive Absences",
+            "default": 0
+          },
+          "monthly_absences": {
+            "type": "integer",
+            "title": "Monthly Absences",
+            "default": 0
+          },
+          "term_absences": {
+            "type": "integer",
+            "title": "Term Absences",
+            "default": 0
+          },
+          "return_streak": {
+            "type": "integer",
+            "title": "Return Streak",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "CaseMetrics"
+      },
+      "CaseNoteRequest": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "CaseNoteRequest"
+      },
+      "CaseResolveRequest": {
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "title": "Outcome"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "outcome"
+        ],
+        "title": "CaseResolveRequest"
+      },
+      "CaseStatusEnum": {
+        "type": "string",
+        "enum": [
+          "open",
+          "mentor_assigned",
+          "visited",
+          "escalated_sector",
+          "escalated_district",
+          "resolved_returned",
+          "closed_moved",
+          "closed_other"
+        ],
+        "title": "CaseStatusEnum"
+      },
+      "ChangePasswordRequest": {
+        "properties": {
+          "current_password": {
+            "type": "string",
+            "title": "Current Password"
+          },
+          "new_password": {
+            "type": "string",
+            "title": "New Password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "current_password",
+          "new_password"
+        ],
+        "title": "ChangePasswordRequest"
+      },
+      "ChangePinRequest": {
+        "properties": {
+          "current_pin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Pin"
+          },
+          "new_pin": {
+            "type": "string",
+            "title": "New Pin"
+          }
+        },
+        "type": "object",
+        "required": [
+          "new_pin"
+        ],
+        "title": "ChangePinRequest"
+      },
+      "ClassAttendanceResponse": {
+        "properties": {
+          "class_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Class Id"
+          },
+          "class_name": {
+            "type": "string",
+            "title": "Class Name"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "submission": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AttendanceSubmissionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "students": {
+            "items": {
+              "$ref": "#/components/schemas/StudentAttendanceItem"
+            },
+            "type": "array",
+            "title": "Students",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "class_id",
+          "class_name",
+          "date"
+        ],
+        "title": "ClassAttendanceResponse"
+      },
+      "ClassCompliance": {
+        "properties": {
+          "class_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Class Id"
+          },
+          "class_name": {
+            "type": "string",
+            "title": "Class Name"
+          },
+          "grade": {
+            "type": "integer",
+            "title": "Grade"
+          },
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/DayCompliance"
+            },
+            "type": "array",
+            "title": "Days"
+          }
+        },
+        "type": "object",
+        "required": [
+          "class_id",
+          "class_name",
+          "grade",
+          "days"
+        ],
+        "title": "ClassCompliance"
       },
       "ClassCreate": {
         "properties": {
@@ -1496,6 +4246,104 @@
           "dashboard"
         ],
         "title": "ConsentSourceEnum"
+      },
+      "DailyAttendanceTrendItem": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date"
+          },
+          "present": {
+            "type": "integer",
+            "title": "Present"
+          },
+          "absent": {
+            "type": "integer",
+            "title": "Absent"
+          },
+          "enrolled": {
+            "type": "integer",
+            "title": "Enrolled"
+          },
+          "cases": {
+            "type": "integer",
+            "title": "Cases",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "present",
+          "absent",
+          "enrolled"
+        ],
+        "title": "DailyAttendanceTrendItem"
+      },
+      "DayCompliance": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "absent_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Absent Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "status"
+        ],
+        "title": "DayCompliance"
+      },
+      "DevUssdRequest": {
+        "properties": {
+          "phoneNumber": {
+            "type": "string",
+            "title": "Phonenumber"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text",
+            "default": ""
+          },
+          "sessionId": {
+            "type": "string",
+            "title": "Sessionid",
+            "default": "dev-session-1"
+          },
+          "serviceCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Servicecode",
+            "default": "*384*1234#"
+          }
+        },
+        "type": "object",
+        "required": [
+          "phoneNumber"
+        ],
+        "title": "DevUssdRequest"
       },
       "DistrictCreate": {
         "properties": {
@@ -1647,6 +4495,140 @@
         ],
         "title": "HealthResponse"
       },
+      "HelpRequestCreate": {
+        "properties": {
+          "student_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Student Id"
+          },
+          "guardian_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Guardian Id"
+          },
+          "barrier_code": {
+            "$ref": "#/components/schemas/BarrierCodeEnum"
+          },
+          "consent": {
+            "type": "boolean",
+            "title": "Consent",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "student_id",
+          "barrier_code"
+        ],
+        "title": "HelpRequestCreate"
+      },
+      "HelpRequestListItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "student_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Student Id"
+          },
+          "student_name": {
+            "type": "string",
+            "title": "Student Name"
+          },
+          "class_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Class Name"
+          },
+          "school_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "School Id"
+          },
+          "school_name": {
+            "type": "string",
+            "title": "School Name"
+          },
+          "guardian_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Guardian Id"
+          },
+          "guardian_name": {
+            "type": "string",
+            "title": "Guardian Name"
+          },
+          "guardian_phone": {
+            "type": "string",
+            "title": "Guardian Phone"
+          },
+          "barrier_code": {
+            "$ref": "#/components/schemas/BarrierCodeEnum"
+          },
+          "status": {
+            "$ref": "#/components/schemas/HelpRequestStatusEnum"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "student_id",
+          "student_name",
+          "school_id",
+          "school_name",
+          "guardian_id",
+          "guardian_name",
+          "guardian_phone",
+          "barrier_code",
+          "status",
+          "created_at"
+        ],
+        "title": "HelpRequestListItem"
+      },
+      "HelpRequestStatusEnum": {
+        "type": "string",
+        "enum": [
+          "new",
+          "seen",
+          "in_progress",
+          "closed"
+        ],
+        "title": "HelpRequestStatusEnum"
+      },
+      "HelpRequestUpdate": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/HelpRequestStatusEnum"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "HelpRequestUpdate"
+      },
       "LanguageEnum": {
         "type": "string",
         "enum": [
@@ -1675,6 +4657,390 @@
         ],
         "title": "LoginRequest"
       },
+      "MentorRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "phone_e164": {
+            "type": "string",
+            "title": "Phone E164"
+          },
+          "sector_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sector Id"
+          },
+          "sector_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sector Name"
+          },
+          "active_cases": {
+            "type": "integer",
+            "title": "Active Cases",
+            "default": 0
+          },
+          "visits_30d": {
+            "type": "integer",
+            "title": "Visits 30D",
+            "default": 0
+          },
+          "verified_rate": {
+            "type": "number",
+            "title": "Verified Rate",
+            "default": 0.0
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "phone_e164"
+        ],
+        "title": "MentorRead"
+      },
+      "MentorVisitRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "case_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Case Id"
+          },
+          "mentor_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Mentor Id"
+          },
+          "mentor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mentor Name"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "verified": {
+            "type": "boolean",
+            "title": "Verified"
+          },
+          "verified_method": {
+            "type": "string",
+            "title": "Verified Method"
+          },
+          "outcome": {
+            "type": "string",
+            "title": "Outcome"
+          },
+          "barrier_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Barrier Code"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "case_id",
+          "mentor_id",
+          "started_at",
+          "verified",
+          "verified_method",
+          "outcome"
+        ],
+        "title": "MentorVisitRead"
+      },
+      "MissingClassItem": {
+        "properties": {
+          "class_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Class Id"
+          },
+          "class_name": {
+            "type": "string",
+            "title": "Class Name"
+          },
+          "school_name": {
+            "type": "string",
+            "title": "School Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "class_id",
+          "class_name",
+          "school_name"
+        ],
+        "title": "MissingClassItem"
+      },
+      "OverdueCaseItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "ref": {
+            "type": "string",
+            "title": "Ref"
+          },
+          "student_name": {
+            "type": "string",
+            "title": "Student Name"
+          },
+          "school_name": {
+            "type": "string",
+            "title": "School Name"
+          },
+          "level": {
+            "type": "integer",
+            "title": "Level"
+          },
+          "opened_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Opened At"
+          },
+          "days_open": {
+            "type": "integer",
+            "title": "Days Open"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "ref",
+          "student_name",
+          "school_name",
+          "level",
+          "opened_at",
+          "days_open"
+        ],
+        "title": "OverdueCaseItem"
+      },
+      "OverviewKPIs": {
+        "properties": {
+          "students_active": {
+            "type": "integer",
+            "title": "Students Active",
+            "default": 0
+          },
+          "absent_today": {
+            "type": "integer",
+            "title": "Absent Today",
+            "default": 0
+          },
+          "open_cases": {
+            "type": "integer",
+            "title": "Open Cases",
+            "default": 0
+          },
+          "new_cases_7d": {
+            "type": "integer",
+            "title": "New Cases 7D",
+            "default": 0
+          },
+          "visits_overdue": {
+            "type": "integer",
+            "title": "Visits Overdue",
+            "default": 0
+          },
+          "returned_30d": {
+            "type": "integer",
+            "title": "Returned 30D",
+            "default": 0
+          },
+          "attendance_compliance_pct": {
+            "type": "number",
+            "title": "Attendance Compliance Pct",
+            "default": 0.0
+          },
+          "classes_missing_today": {
+            "type": "integer",
+            "title": "Classes Missing Today",
+            "default": 0
+          },
+          "recent_escalations_count": {
+            "type": "integer",
+            "title": "Recent Escalations Count",
+            "default": 0
+          },
+          "pending_help_requests_count": {
+            "type": "integer",
+            "title": "Pending Help Requests Count",
+            "default": 0
+          },
+          "mentor_cases_active": {
+            "type": "integer",
+            "title": "Mentor Cases Active",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "OverviewKPIs"
+      },
+      "PendingHelpRequestItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "student_name": {
+            "type": "string",
+            "title": "Student Name"
+          },
+          "school_name": {
+            "type": "string",
+            "title": "School Name"
+          },
+          "barrier_code": {
+            "type": "string",
+            "title": "Barrier Code"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "student_name",
+          "school_name",
+          "barrier_code",
+          "status",
+          "created_at"
+        ],
+        "title": "PendingHelpRequestItem"
+      },
+      "ReasonCodeEnum": {
+        "type": "string",
+        "enum": [
+          "SICK",
+          "WORK",
+          "COST",
+          "DISTANCE",
+          "OTHER"
+        ],
+        "title": "ReasonCodeEnum"
+      },
+      "RecentEscalationItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "ref": {
+            "type": "string",
+            "title": "Ref"
+          },
+          "student_name": {
+            "type": "string",
+            "title": "Student Name"
+          },
+          "school_name": {
+            "type": "string",
+            "title": "School Name"
+          },
+          "level": {
+            "type": "integer",
+            "title": "Level"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "escalated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Escalated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "ref",
+          "student_name",
+          "school_name",
+          "level",
+          "status",
+          "escalated_at"
+        ],
+        "title": "RecentEscalationItem"
+      },
       "RefreshTokenRequest": {
         "properties": {
           "refresh_token": {
@@ -1687,6 +5053,31 @@
           "refresh_token"
         ],
         "title": "RefreshTokenRequest"
+      },
+      "ReportingGapItem": {
+        "properties": {
+          "class_name": {
+            "type": "string",
+            "title": "Class Name"
+          },
+          "school_name": {
+            "type": "string",
+            "title": "School Name"
+          },
+          "missing_dates": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing Dates"
+          }
+        },
+        "type": "object",
+        "required": [
+          "class_name",
+          "school_name"
+        ],
+        "title": "ReportingGapItem"
       },
       "ResetPinResponse": {
         "properties": {
@@ -1718,6 +5109,104 @@
           "mentor"
         ],
         "title": "RoleEnum"
+      },
+      "SchoolCompareItem": {
+        "properties": {
+          "school_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "School Id"
+          },
+          "school_name": {
+            "type": "string",
+            "title": "School Name"
+          },
+          "sector_name": {
+            "type": "string",
+            "title": "Sector Name"
+          },
+          "students_active": {
+            "type": "integer",
+            "title": "Students Active",
+            "default": 0
+          },
+          "absent_today": {
+            "type": "integer",
+            "title": "Absent Today",
+            "default": 0
+          },
+          "absence_rate_pct": {
+            "type": "number",
+            "title": "Absence Rate Pct",
+            "default": 0.0
+          },
+          "open_cases": {
+            "type": "integer",
+            "title": "Open Cases",
+            "default": 0
+          },
+          "returned_30d": {
+            "type": "integer",
+            "title": "Returned 30D",
+            "default": 0
+          },
+          "attendance_compliance_pct": {
+            "type": "number",
+            "title": "Attendance Compliance Pct",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "school_id",
+          "school_name",
+          "sector_name"
+        ],
+        "title": "SchoolCompareItem"
+      },
+      "SchoolComplianceResponse": {
+        "properties": {
+          "school_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "School Id"
+          },
+          "school_name": {
+            "type": "string",
+            "title": "School Name"
+          },
+          "from_date": {
+            "type": "string",
+            "format": "date",
+            "title": "From Date"
+          },
+          "to_date": {
+            "type": "string",
+            "format": "date",
+            "title": "To Date"
+          },
+          "compliance_pct": {
+            "type": "number",
+            "title": "Compliance Pct"
+          },
+          "classes": {
+            "items": {
+              "$ref": "#/components/schemas/ClassCompliance"
+            },
+            "type": "array",
+            "title": "Classes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "school_id",
+          "school_name",
+          "from_date",
+          "to_date",
+          "compliance_pct",
+          "classes"
+        ],
+        "title": "SchoolComplianceResponse"
       },
       "SchoolCreate": {
         "properties": {
@@ -1856,6 +5345,24 @@
         "type": "object",
         "title": "SchoolUpdate"
       },
+      "ScopeInfo": {
+        "properties": {
+          "level": {
+            "type": "string",
+            "title": "Level"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "level",
+          "name"
+        ],
+        "title": "ScopeInfo"
+      },
       "SectorCreate": {
         "properties": {
           "district_id": {
@@ -1907,6 +5414,145 @@
           "M"
         ],
         "title": "SexEnum"
+      },
+      "SmsOutboxListItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "to_e164": {
+            "type": "string",
+            "title": "To E164"
+          },
+          "template_key": {
+            "type": "string",
+            "title": "Template Key"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "status": {
+            "$ref": "#/components/schemas/SmsStatusEnum"
+          },
+          "attempts": {
+            "type": "integer",
+            "title": "Attempts"
+          },
+          "last_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Error"
+          },
+          "scheduled_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scheduled At"
+          },
+          "sent_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sent At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "to_e164",
+          "template_key",
+          "body",
+          "status",
+          "attempts",
+          "scheduled_at"
+        ],
+        "title": "SmsOutboxListItem"
+      },
+      "SmsStatusEnum": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "sent",
+          "delivered",
+          "failed",
+          "skipped"
+        ],
+        "title": "SmsStatusEnum"
+      },
+      "StudentAttendanceItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "roll_number": {
+            "type": "integer",
+            "title": "Roll Number"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "is_absent": {
+            "type": "boolean",
+            "title": "Is Absent"
+          },
+          "absence_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Absence Id"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReasonCodeEnum"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AbsenceStatusEnum"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "roll_number",
+          "full_name",
+          "is_absent"
+        ],
+        "title": "StudentAttendanceItem"
       },
       "StudentCreate": {
         "properties": {
@@ -2099,6 +5745,37 @@
         ],
         "title": "StudentStatusEnum"
       },
+      "SubmissionSourceEnum": {
+        "type": "string",
+        "enum": [
+          "ussd",
+          "dashboard"
+        ],
+        "title": "SubmissionSourceEnum"
+      },
+      "SubmitAttendanceRequest": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "title": "Date"
+          },
+          "absent_student_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Absent Student Ids",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "date"
+        ],
+        "title": "SubmitAttendanceRequest"
+      },
       "TokenResponse": {
         "properties": {
           "access_token": {
@@ -2125,6 +5802,55 @@
           "user"
         ],
         "title": "TokenResponse"
+      },
+      "UpdateProfileRequest": {
+        "properties": {
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LanguageEnum"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "phone_e164": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone E164"
+          }
+        },
+        "type": "object",
+        "title": "UpdateProfileRequest"
       },
       "UserCreate": {
         "properties": {
@@ -2239,6 +5965,17 @@
             "type": "string",
             "title": "Full Name"
           },
+          "avatar_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avatar Url"
+          },
           "role": {
             "$ref": "#/components/schemas/RoleEnum"
           },
@@ -2255,6 +5992,17 @@
               }
             ],
             "title": "Phone Masked"
+          },
+          "phone_e164": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone E164"
           },
           "school_id": {
             "anyOf": [
@@ -2291,6 +6039,39 @@
               }
             ],
             "title": "District Id"
+          },
+          "school_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "School Name"
+          },
+          "sector_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sector Name"
+          },
+          "district_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "District Name"
           },
           "is_active": {
             "type": "boolean",

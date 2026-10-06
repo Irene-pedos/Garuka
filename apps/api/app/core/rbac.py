@@ -2,10 +2,11 @@ import uuid
 from collections.abc import Callable
 
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Query, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.logging import mask_phone
 from app.core.security import decode_token
@@ -18,15 +19,21 @@ security_bearer = HTTPBearer(auto_error=False)
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(security_bearer),
+    token_param: str | None = Query(None, alias="token"),
     db: AsyncSession = Depends(get_db),
 ) -> User:
-    if not credentials:
+    token: str | None = None
+    if credentials:
+        token = credentials.credentials
+    elif token_param:
+        token = token_param
+
+    if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing authentication token",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    token = credentials.credentials
     try:
         payload = decode_token(token)
         if payload.get("type") != "access":
@@ -49,7 +56,11 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         ) from err
 
-    result = await db.execute(select(User).where(User.id == user_id))
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.school), selectinload(User.sector), selectinload(User.district))
+        .where(User.id == user_id)
+    )
     user = result.scalar_one_or_none()
     if not user or not user.is_active:
         raise HTTPException(
@@ -72,15 +83,24 @@ def require_roles(*allowed_roles: RoleEnum) -> Callable:
 
 
 def user_to_me_response(user: User) -> UserMeResponse:
+    school_name = user.school.name if ("school" in user.__dict__ and user.school) else None
+    sector_name = user.sector.name if ("sector" in user.__dict__ and user.sector) else None
+    district_name = user.district.name if ("district" in user.__dict__ and user.district) else None
+
     return UserMeResponse(
         id=user.id,
         email=user.email,
         full_name=user.full_name,
+        avatar_url=user.avatar_url,
         role=user.role,
         language=user.language,
         phone_masked=mask_phone(user.phone_e164) if user.phone_e164 else None,
+        phone_e164=user.phone_e164,
         school_id=user.school_id,
         sector_id=user.sector_id,
         district_id=user.district_id,
+        school_name=school_name,
+        sector_name=sector_name,
+        district_name=district_name,
         is_active=user.is_active,
     )

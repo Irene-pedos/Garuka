@@ -13,6 +13,8 @@ from app.models.attendance import (
     Absence,
     AbsenceStatusEnum,
     AttendanceSubmission,
+    ReasonCodeEnum,
+    ReasonSourceEnum,
     SubmissionSourceEnum,
 )
 from app.models.base import utc_now
@@ -21,6 +23,7 @@ from app.models.case import (
     Case,
     CaseEvent,
     CaseStatusEnum,
+    HelpRequest,
     MentorVisit,
     VerifiedMethodEnum,
     VisitCode,
@@ -29,6 +32,7 @@ from app.models.case import (
 from app.models.messaging import UssdRequest, UssdSession
 from app.models.student import (
     Class,
+    ConsentSourceEnum,
     Guardian,
     Student,
     StudentStatusEnum,
@@ -36,6 +40,7 @@ from app.models.student import (
     student_guardians,
 )
 from app.models.user import LanguageEnum, RoleEnum, User
+from app.services.attendance_service import record_class_attendance
 from app.services.rules_engine import evaluate_student
 from app.services.sms.outbox_worker import enqueue_sms, process_outbox_batch
 from app.services.ussd.calendar_helper import get_available_attendance_dates, get_kigali_today
@@ -80,10 +85,16 @@ async def handle_ussd_request(
 
     # 1. Parse cumulative inputs
     clean_text = raw_text.strip()
+    is_malformed = False
     if clean_text:
-        # Strip trailing asterisks
-        clean_text = clean_text.rstrip("*")
-        inputs = [p.strip() for p in clean_text.split("*") if p.strip()]
+        # Check for malformed delimiters (empty segments like 1**2 or leading *)
+        trimmed = clean_text.rstrip("*")
+        raw_parts = trimmed.split("*")
+        if any(p == "" for p in raw_parts) or clean_text.startswith("*"):
+            is_malformed = True
+            inputs = raw_parts
+        else:
+            inputs = [p.strip() for p in raw_parts]
     else:
         inputs = []
     n_inputs = len(inputs)
@@ -119,6 +130,15 @@ async def handle_ussd_request(
     identity = await resolve_identity(phone_number, db)
     lang = identity.language
 
+    # Handle Malformed Delimiters (return short localized retry screen)
+    if is_malformed:
+        body = get_msg("S_INVALID_INPUT", lang)
+        rendered = render_ussd_response("CON", body)
+        await save_request_cache(
+            db, session_id, n_inputs, "S_INVALID_INPUT", "CON", rendered, start_time
+        )
+        return "CON", rendered
+
     # Handle Unregistered Subscriber
     if identity.role_type == IdentityRole.UNREGISTERED:
         body = get_msg("S_UNREGISTERED", lang)
@@ -144,12 +164,17 @@ async def handle_ussd_request(
         choice = inputs[inp_idx]
         inp_idx += 1
         if choice == "2":
-            # Parent flow (Milestone M4)
-            rendered = render_ussd_response("END", "Parent flow coming soon in M4.")
-            await save_request_cache(
-                db, session_id, n_inputs, "P_MENU", "END", rendered, start_time
+            # Guardian (parent) branch — dual-registered caller chose parent menu
+            return await execute_guardian_flow(
+                inputs=inputs,
+                inp_idx=inp_idx,
+                n_inputs=n_inputs,
+                guardian=identity.guardian,
+                lang=lang,
+                session_id=session_id,
+                start_time=start_time,
+                db=db,
             )
-            return "END", rendered
         elif choice != "1":
             body = get_msg("S_INVALID", lang) + get_msg("S_ROLE_PICK", lang)
             rendered = render_ussd_response("CON", body)
@@ -160,10 +185,17 @@ async def handle_ussd_request(
 
     user = identity.user
     if not user:
-        # Guardian only -> parent flow
-        rendered = render_ussd_response("END", "Parent flow coming soon in M4.")
-        await save_request_cache(db, session_id, n_inputs, "P_MENU", "END", rendered, start_time)
-        return "END", rendered
+        # Guardian-only caller → parent flow
+        return await execute_guardian_flow(
+            inputs=inputs,
+            inp_idx=inp_idx,
+            n_inputs=n_inputs,
+            guardian=identity.guardian,
+            lang=lang,
+            session_id=session_id,
+            start_time=start_time,
+            db=db,
+        )
 
     # 5. Staff PIN Authentication / Setup Flow
     if user.pin_hash is None:
@@ -290,6 +322,301 @@ async def handle_ussd_request(
         start_time=start_time,
         db=db,
     )
+
+
+async def execute_guardian_flow(
+    inputs: list[str],
+    inp_idx: int,
+    n_inputs: int,
+    guardian: Guardian | None,
+    lang: LanguageEnum,
+    session_id: str,
+    start_time: float,
+    db: AsyncSession,
+) -> tuple[str, str]:
+    """Full parent / guardian USSD flow per SPEC §7.2.
+
+    Parent identity is the phone number only (no PIN in MVP).  The guardian
+    record is passed in from the identity resolver.
+
+    Screens implemented:
+    - P_CHILD   — multi-child picker (skipped if guardian has exactly one child)
+    - P_MENU    — Garuka - {child}: 1.Attendance 2.Explain 3.Help 4.Language
+    - P_ATT     — attendance summary (last 30 days)
+    - P_ABS_PICK — which absence to explain (latest 3 without a reason)
+    - P_REASON  — reason code picker → saves reason, END
+    - P_HELP    — barrier picker → creates help_request, END
+    - S_LANG / S_LANG_SAVED — reuse existing language change flow
+    """
+    if not guardian:
+        # Should not happen: guardian is always set when role_type is PARENT
+        body = get_msg("S_ERROR", lang)
+        rendered = render_ussd_response("END", body)
+        await save_request_cache(db, session_id, n_inputs, "P_ERROR", "END", rendered, start_time)
+        return "END", rendered
+
+    # Load children (students) for this guardian
+    from sqlalchemy.orm import selectinload as _sil
+    guard_res = await db.execute(
+        select(Guardian)
+        .options(_sil(Guardian.students).selectinload(Student.class_group))
+        .where(Guardian.id == guardian.id)
+    )
+    full_guardian = guard_res.scalar_one_or_none()
+    if full_guardian and full_guardian.consent_at is None:
+        full_guardian.consent_at = utc_now()
+        full_guardian.consent_source = ConsentSourceEnum.ussd
+        await db.commit()
+
+    children = [s for s in (full_guardian.students if full_guardian else [])
+                if s.status == StudentStatusEnum.active]
+
+    if not children:
+        body = get_msg("S_UNREGISTERED", lang)
+        rendered = render_ussd_response("END", body)
+        await save_request_cache(db, session_id, n_inputs, "P_NO_CHILD", "END", rendered, start_time)
+        return "END", rendered
+
+    # --- P_CHILD: multi-child picker (skip if only one child) ---
+    selected_student: Student
+    if len(children) == 1:
+        selected_student = children[0]
+    else:
+        child_lines = []
+        for i, s in enumerate(children[:5], 1):
+            parts = s.full_name.split()
+            short = f"{parts[0]} {parts[1][0]}." if len(parts) > 1 else parts[0]
+            child_lines.append(f"{i}. {short}")
+
+        if inp_idx >= n_inputs:
+            body = get_msg("P_CHILD", lang, lines="\n".join(child_lines))
+            rendered = render_ussd_response("CON", body)
+            await save_request_cache(
+                db, session_id, n_inputs, "P_CHILD", "CON", rendered, start_time
+            )
+            return "CON", rendered
+
+        child_choice = inputs[inp_idx]
+        inp_idx += 1
+        try:
+            c_idx = int(child_choice) - 1
+            if c_idx < 0 or c_idx >= len(children[:5]):
+                raise ValueError
+            selected_student = children[c_idx]
+        except ValueError:
+            child_lines_str = "\n".join(child_lines)
+            body = get_msg("S_INVALID", lang) + get_msg("P_CHILD", lang, lines=child_lines_str)
+            rendered = render_ussd_response("CON", body)
+            await save_request_cache(
+                db, session_id, n_inputs, "P_CHILD", "CON", rendered, start_time
+            )
+            return "CON", rendered
+
+    # Short child name for screen headers (First L.)
+    name_parts = selected_student.full_name.split()
+    child_short = f"{name_parts[0]} {name_parts[1][0]}." if len(name_parts) > 1 else name_parts[0]
+    # Cap at 20 chars to keep screens within 160
+    child_short = child_short[:20]
+
+    # --- P_MENU ---
+    if inp_idx >= n_inputs:
+        body = get_msg("P_MENU", lang, child=child_short)
+        rendered = render_ussd_response("CON", body)
+        await save_request_cache(
+            db, session_id, n_inputs, "P_MENU", "CON", rendered, start_time
+        )
+        return "CON", rendered
+
+    menu_choice = inputs[inp_idx]
+    inp_idx += 1
+
+    # --- Option 4: Language ---
+    if menu_choice == "4":
+        if inp_idx >= n_inputs:
+            body = get_msg("S_LANG", lang)
+            rendered = render_ussd_response("CON", body)
+            await save_request_cache(
+                db, session_id, n_inputs, "S_LANG", "CON", rendered, start_time
+            )
+            return "CON", rendered
+
+        lang_choice = inputs[inp_idx]
+        lang_map = {"1": LanguageEnum.rw, "2": LanguageEnum.en, "3": LanguageEnum.fr}
+        new_lang = lang_map.get(lang_choice, LanguageEnum.rw)
+        guardian.language = new_lang
+        await db.commit()
+
+        body = get_msg("S_LANG_SAVED", new_lang)
+        rendered = render_ussd_response("END", body)
+        await save_request_cache(
+            db, session_id, n_inputs, "S_LANG_SAVED", "END", rendered, start_time
+        )
+        return "END", rendered
+
+    # --- Option 1: Attendance summary ---
+    if menu_choice == "1":
+        today = get_kigali_today()
+        thirty_ago = today - timedelta(days=30)
+        abs_res = await db.execute(
+            select(Absence)
+            .where(
+                Absence.student_id == selected_student.id,
+                Absence.status == AbsenceStatusEnum.active,
+                Absence.date >= thirty_ago,
+            )
+            .order_by(Absence.date.desc())
+        )
+        recent_absences = abs_res.scalars().all()
+        n_abs = len(recent_absences)
+        if n_abs == 0:
+            body = get_msg("P_ATT_NONE", lang, child=child_short)
+        else:
+            last_date = recent_absences[0].date.strftime("%d/%m")
+            body = get_msg("P_ATT", lang, child=child_short, n=n_abs, last_date=last_date)
+        rendered = render_ussd_response("END", body)
+        await save_request_cache(
+            db, session_id, n_inputs, "P_ATT", "END", rendered, start_time
+        )
+        return "END", rendered
+
+    # --- Option 2: Explain an absence ---
+    if menu_choice == "2":
+        # Find latest 3 active absences without a reason
+        abs_res = await db.execute(
+            select(Absence)
+            .where(
+                Absence.student_id == selected_student.id,
+                Absence.status == AbsenceStatusEnum.active,
+                Absence.reason_code.is_(None),
+            )
+            .order_by(Absence.date.desc())
+            .limit(3)
+        )
+        unexplained = abs_res.scalars().all()
+
+        if not unexplained:
+            body = get_msg("P_ABS_NONE", lang)
+            rendered = render_ussd_response("END", body)
+            await save_request_cache(
+                db, session_id, n_inputs, "P_ABS_NONE", "END", rendered, start_time
+            )
+            return "END", rendered
+
+        abs_lines = [f"{i}. {ab.date.strftime('%d/%m')}" for i, ab in enumerate(unexplained, 1)]
+
+        if inp_idx >= n_inputs:
+            body = get_msg("P_ABS_PICK", lang, lines="\n".join(abs_lines))
+            rendered = render_ussd_response("CON", body)
+            await save_request_cache(
+                db, session_id, n_inputs, "P_ABS_PICK", "CON", rendered, start_time
+            )
+            return "CON", rendered
+
+        abs_choice = inputs[inp_idx]
+        inp_idx += 1
+        try:
+            a_idx = int(abs_choice) - 1
+            if a_idx < 0 or a_idx >= len(unexplained):
+                raise ValueError
+            chosen_absence = unexplained[a_idx]
+        except ValueError:
+            body = get_msg("S_INVALID", lang) + get_msg(
+                "P_ABS_PICK", lang, lines="\n".join(abs_lines)
+            )
+            rendered = render_ussd_response("CON", body)
+            await save_request_cache(
+                db, session_id, n_inputs, "P_ABS_PICK", "CON", rendered, start_time
+            )
+            return "CON", rendered
+
+        # P_REASON
+        if inp_idx >= n_inputs:
+            body = get_msg("P_REASON", lang)
+            rendered = render_ussd_response("CON", body)
+            await save_request_cache(
+                db, session_id, n_inputs, "P_REASON", "CON", rendered, start_time
+            )
+            return "CON", rendered
+
+        reason_choice = inputs[inp_idx]
+        inp_idx += 1
+        reason_map = {
+            "1": ReasonCodeEnum.SICK,
+            "2": ReasonCodeEnum.WORK,
+            "3": ReasonCodeEnum.COST,
+            "4": ReasonCodeEnum.DISTANCE,
+            "5": ReasonCodeEnum.OTHER,
+        }
+        if reason_choice not in reason_map:
+            body = get_msg("S_INVALID", lang) + get_msg("P_REASON", lang)
+            rendered = render_ussd_response("CON", body)
+            await save_request_cache(
+                db, session_id, n_inputs, "P_REASON", "CON", rendered, start_time
+            )
+            return "CON", rendered
+
+        # Commit: save reason on the absence record
+        chosen_absence.reason_code = reason_map[reason_choice]
+        chosen_absence.reason_source = ReasonSourceEnum.parent
+        chosen_absence.reason_at = utc_now()
+        await db.commit()
+
+        body = get_msg("P_REASON_SAVED", lang)
+        rendered = render_ussd_response("END", body)
+        await save_request_cache(
+            db, session_id, n_inputs, "P_REASON_SAVED", "END", rendered, start_time
+        )
+        return "END", rendered
+
+    # --- Option 3: Ask for help ---
+    if menu_choice == "3":
+        if inp_idx >= n_inputs:
+            body = get_msg("P_HELP", lang)
+            rendered = render_ussd_response("CON", body)
+            await save_request_cache(
+                db, session_id, n_inputs, "P_HELP", "CON", rendered, start_time
+            )
+            return "CON", rendered
+
+        help_choice = inputs[inp_idx]
+        inp_idx += 1
+        barrier_map = {
+            "1": BarrierCodeEnum.COST,
+            "2": BarrierCodeEnum.HUNGER,
+            "3": BarrierCodeEnum.HEALTH,
+            "4": BarrierCodeEnum.DISTANCE,
+            "5": BarrierCodeEnum.FAMILY,
+            "6": BarrierCodeEnum.OTHER,
+        }
+        if help_choice not in barrier_map:
+            body = get_msg("S_INVALID", lang) + get_msg("P_HELP", lang)
+            rendered = render_ussd_response("CON", body)
+            await save_request_cache(
+                db, session_id, n_inputs, "P_HELP", "CON", rendered, start_time
+            )
+            return "CON", rendered
+
+        # Commit: create help_request
+        help_req = HelpRequest(
+            student_id=selected_student.id,
+            guardian_id=guardian.id,
+            barrier_code=barrier_map[help_choice],
+        )
+        db.add(help_req)
+        await db.commit()
+
+        body = get_msg("P_HELP_SENT", lang)
+        rendered = render_ussd_response("END", body)
+        await save_request_cache(
+            db, session_id, n_inputs, "P_HELP_SENT", "END", rendered, start_time
+        )
+        return "END", rendered
+
+    # --- Invalid menu choice ---
+    body = get_msg("S_INVALID", lang) + get_msg("P_MENU", lang, child=child_short)
+    rendered = render_ussd_response("CON", body)
+    await save_request_cache(db, session_id, n_inputs, "P_MENU", "CON", rendered, start_time)
+    return "CON", rendered
 
 
 async def execute_mentor_flow(
@@ -1063,92 +1390,19 @@ async def execute_mark_absences_flow(
         return "CON", rendered
 
     # 6. Commit Node (Terminal Screen)
-    # Upsert AttendanceSubmission
-    if existing_sub:
-        existing_sub.absent_count = len(sorted_rolls)
-        existing_sub.submitted_by = user.id
-        existing_sub.submitted_at = utc_now()
-        submission = existing_sub
-    else:
-        submission = AttendanceSubmission(
-            class_id=selected_class.id,
-            date=selected_date,
-            submitted_by=user.id,
-            source=SubmissionSourceEnum.ussd,
-            absent_count=len(sorted_rolls),
-            submitted_at=utc_now(),
-        )
-        db.add(submission)
-        await db.flush()
-
-    # Void absences not in the new list if replacing
     absent_students = [students_by_roll[r] for r in sorted_rolls]
     absent_student_ids = {s.id for s in absent_students}
 
-    if is_replacing:
-        existing_absences_res = await db.execute(
-            select(Absence).where(
-                Absence.submission_id == submission.id,
-                Absence.date == selected_date,
-            )
-        )
-        for old_abs in existing_absences_res.scalars().all():
-            if old_abs.student_id not in absent_student_ids:
-                old_abs.status = AbsenceStatusEnum.voided
-
-    # Insert newly absent students and enqueue parent SMS
-    for student in absent_students:
-        abs_check = await db.execute(
-            select(Absence).where(
-                Absence.student_id == student.id,
-                Absence.date == selected_date,
-            )
-        )
-        existing_abs = abs_check.scalar_one_or_none()
-        is_new_or_reactivated = False
-        if not existing_abs:
-            abs_record = Absence(
-                student_id=student.id,
-                date=selected_date,
-                submission_id=submission.id,
-                status=AbsenceStatusEnum.active,
-            )
-            db.add(abs_record)
-            is_new_or_reactivated = True
-        elif existing_abs.status == AbsenceStatusEnum.voided:
-            existing_abs.status = AbsenceStatusEnum.active
-            existing_abs.submission_id = submission.id
-            is_new_or_reactivated = True
-
-        await db.flush()
-
-        # Enqueue parent SMS to primary guardian
-        guardian = await get_primary_guardian(student, db)
-        if guardian and guardian.phone_e164 and not guardian.sms_opt_out:
-            # Check if SMS already enqueued for this date
-            sms_dedupe = f"absence:{student.id}:{selected_date}"
-            sms_body = (
-                f"Garuka: {student.full_name.split()[0]} was marked absent at "
-                f"{selected_class.name} on {selected_date.strftime('%d/%m')}. "
-                f"Dial {settings.USSD_SERVICE_CODE_DISPLAY} to tell us why."
-            )
-            await enqueue_sms(
-                db=db,
-                to_e164=guardian.phone_e164,
-                template_key="parent_absence",
-                params={"child": student.full_name, "date": str(selected_date)},
-                body=sms_body,
-                dedupe_key=sms_dedupe,
-                related_student_id=student.id,
-            )
-
-        # Evaluate dropout risk rules for absent student
-        try:
-            await evaluate_student(student.id, db)
-        except Exception as e:  # noqa: BLE001
-            logger.error("Error evaluating student %s in USSD flow: %s", student.id, e)
-
-    await db.commit()
+    await record_class_attendance(
+        db=db,
+        class_id=selected_class.id,
+        target_date=selected_date,
+        absent_student_ids=absent_student_ids,
+        submitted_by_user_id=user.id,
+        submitted_by_role=user.role.value,
+        source=SubmissionSourceEnum.ussd,
+        class_name=selected_class.name,
+    )
 
     # Proactively dispatch pending outbox so SMS is delivered immediately
     try:

@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -38,6 +38,7 @@ class User(Base, UUIDMixin, TimestampMixin):
         index=True,
     )
     full_name: Mapped[str] = mapped_column(String(150), nullable=False)
+    avatar_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     email: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True, index=True)
     phone_e164: Mapped[str | None] = mapped_column(
         String(20), unique=True, nullable=True, index=True

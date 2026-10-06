@@ -11,6 +11,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<UserMe>;
   logout: () => void;
   isLoading: boolean;
+  refreshUser: () => Promise<UserMe | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,6 +22,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
+
+  const refreshUser = async (): Promise<UserMe | null> => {
+    const savedToken = localStorage.getItem("garuka_token") || token;
+    if (!savedToken) return null;
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${savedToken}` },
+      });
+      if (res.ok) {
+        const userData = await res.json();
+        setUser(userData);
+        return userData;
+      }
+    } catch {
+      // Ignore network errors on refresh
+    }
+    return null;
+  };
 
   useEffect(() => {
     const savedToken = localStorage.getItem("garuka_token");
@@ -71,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, isLoading, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

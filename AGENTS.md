@@ -9,3 +9,4 @@
 6. Business dates use Africa/Kigali (UTC+2). Store timestamps as UTC `timestamptz`. Store phone numbers as E.164 (`+250788123456`).
 7. Do not invent AT behavior. If unsure, check AT docs and note it in `docs/ASSUMPTIONS.md`.
 8. Write tests with the code. A task is not done without tests.
+9. Project Goal Alignment: Before implementing or changing any feature, check that it aligns with the project vision in `docs/PROJECT_DESCRIPTION.md` (fast absence-to-action USSD loop, parent notification, mentor home visits with OTP verification, and SEO escalation).

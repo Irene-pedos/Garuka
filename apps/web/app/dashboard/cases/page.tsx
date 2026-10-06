@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { DataAlert, TableEmptyState, TableLoadingState } from "@/components/ui/data-state";
 
 interface CaseItem {
   id: string;
@@ -166,11 +167,7 @@ export default function CasesPage() {
         </div>
       </div>
 
-      {error && (
-        <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
-          {error}
-        </div>
-      )}
+      <DataAlert error={error} onRetry={loadCases} />
 
       {/* Cases Table */}
       <div className="rounded-md border bg-card overflow-hidden">
@@ -190,17 +187,9 @@ export default function CasesPage() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground animate-pulse">
-                  Loading cases...
-                </TableCell>
-              </TableRow>
+              <TableLoadingState colSpan={9} message="Loading cases..." />
             ) : cases.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                  No cases found matching your filters.
-                </TableCell>
-              </TableRow>
+              <TableEmptyState colSpan={9} message="No cases found matching your filters." />
             ) : (
               cases.map((c) => (
                 <TableRow key={c.id}>

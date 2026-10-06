@@ -6,9 +6,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import get_pin_hash
 from app.models.attendance import AttendanceSubmission
+from app.models.base import utc_now
 from app.models.geo import School
-from app.models.student import Class, Student, StudentStatusEnum
-from app.models.user import RoleEnum, User
+from app.models.messaging import SmsOutbox
+from app.models.student import (
+    Class,
+    ConsentSourceEnum,
+    Guardian,
+    Student,
+    StudentStatusEnum,
+    student_guardians,
+)
+from app.models.user import LanguageEnum, RoleEnum, User
 from app.services.ussd.engine import handle_ussd_request
 
 
@@ -378,6 +387,8 @@ async def test_ussd_teacher_attendance_triggers_parent_sms(db_session: AsyncSess
         full_name="Guardian One",
         phone_e164=g_phone,
         sms_opt_out=False,
+        consent_at=utc_now(),
+        consent_source=ConsentSourceEnum.school_form,
     )
     db_session.add(guardian)
     await db_session.flush()
@@ -424,4 +435,129 @@ async def test_ussd_teacher_attendance_triggers_parent_sms(db_session: AsyncSess
     outbox_entry = sms_res.scalar_one_or_none()
     assert outbox_entry is not None
     assert "Absent" in outbox_entry.body or "absent" in outbox_entry.body
+
+
+@pytest.mark.asyncio
+async def test_ussd_malformed_input_returns_retry_screen(db_session: AsyncSession):
+    """Inputs with consecutive asterisks like 1**2 must return a retry screen
+    rather than silently normalizing to 1*2."""
+    t_phone = f"+25078{uuid.uuid4().int % 10000000:07d}"
+    user = User(
+        email=f"teacher_{uuid.uuid4().hex[:6]}@test.rw",
+        phone_e164=t_phone,
+        full_name="Malformed Test Teacher",
+        role=RoleEnum.teacher,
+        language=LanguageEnum.en,
+        pin_hash=get_pin_hash("4821"),
+        is_active=True,
+    )
+    db_session.add(user)
+    await db_session.commit()
+
+    sess_id = f"sess_malformed_{uuid.uuid4()}"
+
+    # 1. Malformed input with double asterisk
+    kind, body = await handle_ussd_request(
+        session_id=sess_id,
+        service_code="*384*1234#",
+        phone_number=t_phone,
+        raw_text="4821**1",
+        db=db_session,
+    )
+    assert kind == "CON"
+    assert "Invalid input format" in body
+
+    # 2. Replay of same text returns cached response idempotently
+    cached_kind, cached_body = await handle_ussd_request(
+        session_id=sess_id,
+        service_code="*384*1234#",
+        phone_number=t_phone,
+        raw_text="4821**1",
+        db=db_session,
+    )
+    assert cached_kind == "CON"
+    assert cached_body == body
+
+
+@pytest.mark.asyncio
+async def test_ussd_teacher_attendance_does_not_sms_unconsented_guardian(db_session: AsyncSession):
+    """Guardians without recorded consent (consent_at is None) must NOT receive SMS alerts."""
+    sector_res = await db_session.execute(select(School).limit(1))
+    school = sector_res.scalar_one()
+
+    t_phone = f"+25078{uuid.uuid4().int % 10000000:07d}"
+    teacher = User(
+        email=f"t_{uuid.uuid4().hex[:6]}@test.rw",
+        phone_e164=t_phone,
+        full_name="Teacher NoConsent",
+        role=RoleEnum.teacher,
+        school_id=school.id,
+        pin_hash=get_pin_hash("4821"),
+        is_active=True,
+    )
+    db_session.add(teacher)
+    await db_session.flush()
+
+    cls = Class(
+        school_id=school.id,
+        name=f"P5 {uuid.uuid4().hex[:4]}",
+        grade=5,
+        academic_year=2026,
+        class_teacher_id=teacher.id,
+    )
+    db_session.add(cls)
+    await db_session.flush()
+
+    # Create guardian WITHOUT consent
+    g_phone = f"+25078{uuid.uuid4().int % 10000000:07d}"
+    guardian = Guardian(
+        full_name="Guardian NoConsent",
+        phone_e164=g_phone,
+        sms_opt_out=False,
+        consent_at=None,
+        consent_source=None,
+    )
+    db_session.add(guardian)
+    await db_session.flush()
+
+    student = Student(
+        school_id=school.id,
+        class_id=cls.id,
+        roll_number=1,
+        full_name="Student NoConsent",
+        status=StudentStatusEnum.active,
+    )
+    db_session.add(student)
+    await db_session.flush()
+
+    await db_session.execute(
+        student_guardians.insert().values(
+            student_id=student.id,
+            guardian_id=guardian.id,
+            relationship="father",
+            is_primary=True,
+        )
+    )
+    await db_session.commit()
+
+    # Submit attendance marking roll 1 absent
+    session_id = f"sess_noconsent_{uuid.uuid4()}"
+    kind, body = await handle_ussd_request(
+        session_id=session_id,
+        service_code="*384*1234#",
+        phone_number=t_phone,
+        raw_text="4821*1*1*1*0*1",
+        db=db_session,
+    )
+    assert kind == "END"
+
+    # Verify NO SMS was created for unconsented guardian
+    sms_res = await db_session.execute(
+        select(SmsOutbox).where(
+            SmsOutbox.to_e164 == g_phone,
+            SmsOutbox.template_key == "parent_absence",
+        )
+    )
+    assert sms_res.scalar_one_or_none() is None
+
 

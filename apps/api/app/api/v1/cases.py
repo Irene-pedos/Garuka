@@ -31,6 +31,14 @@ from app.schemas.case import (
     CaseResolveRequest,
     MentorVisitRead,
 )
+from app.services.case_service import (
+    CaseNotFoundError,
+    CaseValidationError,
+    add_case_note as service_add_case_note,
+    assign_case_mentor as service_assign_case_mentor,
+    escalate_case as service_escalate_case,
+    resolve_case as service_resolve_case,
+)
 from app.services.rules_engine import calculate_student_metrics
 
 router = APIRouter(prefix="/cases", tags=["cases"])
@@ -302,30 +310,18 @@ async def assign_case_mentor(
     ),
     db: AsyncSession = Depends(get_db),
 ) -> CaseDetail:
-    case = await db.get(Case, case_id)
-    if not case:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Case not found")
-
-    mentor = await db.get(User, payload.mentor_id)
-    if not mentor or mentor.role != RoleEnum.mentor or not mentor.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Designated user is not an active mentor",
+    try:
+        await service_assign_case_mentor(
+            db=db,
+            case_id=case_id,
+            mentor_id=payload.mentor_id,
+            actor_user_id=current_user.id,
         )
-
-    case.mentor_id = mentor.id
-    if case.status == CaseStatusEnum.open:
-        case.status = CaseStatusEnum.mentor_assigned
-
-    event = CaseEvent(
-        case_id=case.id,
-        type="mentor_reassigned",
-        actor_user_id=current_user.id,
-        payload={"mentor_id": str(mentor.id), "mentor_name": mentor.full_name},
-    )
-    db.add(event)
-    await db.commit()
-    return await get_case_detail(case_id, current_user, db)
+        return await get_case_detail(case_id, current_user, db)
+    except CaseNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Case not found")
+    except CaseValidationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post("/{case_id}/escalate", response_model=CaseDetail, operation_id="escalate_case")
@@ -341,23 +337,19 @@ async def escalate_case(
     ),
     db: AsyncSession = Depends(get_db),
 ) -> CaseDetail:
-    case = await db.get(Case, case_id)
-    if not case:
+    try:
+        await service_escalate_case(
+            db=db,
+            case_id=case_id,
+            to_level=payload.to_level,
+            note=payload.note,
+            actor_user_id=current_user.id,
+        )
+        return await get_case_detail(case_id, current_user, db)
+    except CaseNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Case not found")
-
-    case.level = payload.to_level
-    if payload.to_level == 3:
-        case.status = CaseStatusEnum.escalated_sector
-
-    event = CaseEvent(
-        case_id=case.id,
-        type="escalated",
-        actor_user_id=current_user.id,
-        payload={"to_level": payload.to_level, "note": payload.note or ""},
-    )
-    db.add(event)
-    await db.commit()
-    return await get_case_detail(case_id, current_user, db)
+    except CaseValidationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post("/{case_id}/notes", response_model=CaseDetail, operation_id="add_case_note")
@@ -374,19 +366,16 @@ async def add_case_note(
     ),
     db: AsyncSession = Depends(get_db),
 ) -> CaseDetail:
-    case = await db.get(Case, case_id)
-    if not case:
+    try:
+        await service_add_case_note(
+            db=db,
+            case_id=case_id,
+            text=payload.text,
+            actor_user_id=current_user.id,
+        )
+        return await get_case_detail(case_id, current_user, db)
+    except CaseNotFoundError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Case not found")
-
-    event = CaseEvent(
-        case_id=case.id,
-        type="note_added",
-        actor_user_id=current_user.id,
-        payload={"note": payload.text},
-    )
-    db.add(event)
-    await db.commit()
-    return await get_case_detail(case_id, current_user, db)
 
 
 @router.post("/{case_id}/resolve", response_model=CaseDetail, operation_id="resolve_case")
@@ -402,27 +391,16 @@ async def resolve_case(
     ),
     db: AsyncSession = Depends(get_db),
 ) -> CaseDetail:
-    case = await db.get(Case, case_id)
-    if not case:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Case not found")
-
     try:
-        new_status = CaseStatusEnum(payload.outcome)
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid resolution outcome: {payload.outcome}",
+        await service_resolve_case(
+            db=db,
+            case_id=case_id,
+            outcome=payload.outcome,
+            note=payload.note,
+            actor_user_id=current_user.id,
         )
-
-    case.status = new_status
-    case.resolved_at = utc_now()
-
-    event = CaseEvent(
-        case_id=case.id,
-        type="resolved",
-        actor_user_id=current_user.id,
-        payload={"outcome": payload.outcome, "note": payload.note or ""},
-    )
-    db.add(event)
-    await db.commit()
-    return await get_case_detail(case_id, current_user, db)
+        return await get_case_detail(case_id, current_user, db)
+    except CaseNotFoundError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Case not found")
+    except CaseValidationError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

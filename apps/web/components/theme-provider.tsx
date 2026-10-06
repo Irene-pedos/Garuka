@@ -22,7 +22,7 @@ function ThemeProvider({
 }
 
 function isTypingTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) {
+  if (!target || !(target instanceof HTMLElement)) {
     return false
   }
 
@@ -30,7 +30,8 @@ function isTypingTarget(target: EventTarget | null) {
     target.isContentEditable ||
     target.tagName === "INPUT" ||
     target.tagName === "TEXTAREA" ||
-    target.tagName === "SELECT"
+    target.tagName === "SELECT" ||
+    target.closest("input, textarea, select, [contenteditable='true']") !== null
   )
 }
 
@@ -39,6 +40,10 @@ function ThemeHotkey() {
 
   React.useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
+      if (!event || !event.key) {
+        return
+      }
+
       if (event.defaultPrevented || event.repeat) {
         return
       }
